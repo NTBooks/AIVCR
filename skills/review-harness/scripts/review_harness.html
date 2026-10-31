@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Review harness</title><link rel="icon" href="data:,">
+<style>
+:root { --bg:#14110e; --panel:#1f1a15; --ink:#efe6d6; --dim:#9c907d; --gold:#ffd100; --accent:#e0a040; --red:#ff6a5a; }
+* { box-sizing: border-box; } html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, sans-serif; height: 100%; }
+#app { display: grid; grid-template-columns: 1fr 380px; height: 100vh; }
+#left { display: flex; flex-direction: column; min-width: 0; }
+#stage { position: relative; }
+#stage:has(#wait.on) { aspect-ratio: 16 / 9; } #vid { width: 100%; max-height: calc(100vh - 150px); background: #000; display: block; }
+#mark { position: absolute; left: 0; top: 0; width: 100%; height: calc(100% - 48px); cursor: crosshair; display: none; }   /* stops above the video controls */
+#stage.paused #mark { display: block; }
+/* one tab per piece when a project holds several videos (main talk, a cut-apart P.S., Shorts) */
+#pieces { display: none; gap: 6px; padding: 6px 8px; background: #0d0b09; border-bottom: 1px solid #3a3026; }
+#pieces.on { display: flex; } #pieces.on ~ #stage #vid { max-height: calc(100vh - 192px); }
+#pieces button { background: var(--panel); color: var(--dim); border: 1px solid #3a3026; border-radius: 6px; padding: 6px 14px; font: 600 14px system-ui, sans-serif; cursor: pointer; }
+#pieces button.on { background: var(--gold); color: #111; border-color: var(--gold); }
+#pieces button .n { font-weight: 400; opacity: .7; margin-left: 6px; }
+#tl { position: relative; height: 34px; background: #0d0b09; border-top: 1px solid #3a3026; cursor: pointer; }
+#tl canvas.heat { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#tl .chg { position: absolute; top: 0; height: 9px; background: #3cc8ff; border-radius: 0 0 3px 3px; cursor: pointer; z-index: 3; }
+#tl .chg:hover { background: #9be6ff; }
+#hud .chgb { display: none; color: #0d0b09; background: #3cc8ff; border-radius: 4px; padding: 1px 8px; font-size: 13px; } #hud .chgb.on { display: inline-block; }
+#notes li.chgrow { border-left: 4px solid #3cc8ff; } #notes li.chgrow.here { background: #1f3a46; }
+#tl .play { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; pointer-events: none; }
+#tl .dot { position: absolute; top: 7px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; border: 2px solid #0d0b09; }
+#tl .dot.hl { transform: scale(1.9); border-color: #fff; box-shadow: 0 0 10px 3px #fff; z-index: 5; }
+#tl .dot { transition: transform .12s; }
+#notes li.hl { outline: 2px solid #fff; }
+#tl .dot.cur { background: #ffd100; top: 10px; } #tl .dot.old { background: #8a8070; top: 19px; }
+#heatkey { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); } #heatkey i { display: inline-block; width: 70px; height: 9px; border-radius: 2px; background: linear-gradient(90deg, rgba(224,160,64,.35), rgba(255,58,42,.95)); } #heatkey b { display: inline-block; width: 18px; height: 9px; background: #3cc8ff; border-radius: 2px; } #tl .dot.fixed { background: #5fd35f; } #tl .dot.broken { background: #ff5a4a; }
+#tabs { display: flex; gap: 4px; padding: 10px 10px 0; } #tabs button { flex: 1; } #tabs button.on { background: #6a5232; border-color: #c8a060; }
+#notes .old .meta { color: #b9ad98; } #notes img { width: 100%; border-radius: 4px; margin-top: 6px; display: block; }
+#notes .vd { display: flex; gap: 6px; margin-top: 6px; } #notes .vd button { padding: 3px 8px; font-size: 12px; } #notes .vd .on.fx { background: #2f6a2a; } #notes .vd .on.br { background: #7a2a22; }
+#rectinfo { color: #7fd0ff; font-size: 13px; } #clear { display: none; } #notes .box { color: #7fd0ff; }
+#hud { display: flex; gap: 18px; align-items: baseline; padding: 8px 14px; background: var(--panel); font: 600 16px/1.3 Consolas, monospace; }
+#hud .f { color: var(--gold); font-size: 22px; } #hud .shot { color: var(--accent); } #hud .line { color: var(--ink); font: italic 15px Georgia, serif; flex: 1; text-align: right; }
+#bar { display: flex; gap: 8px; padding: 10px 14px; align-items: center; }
+#note { flex: 1; padding: 10px 12px; font-size: 16px; background: #0d0b09; color: var(--ink); border: 1px solid #4a4034; border-radius: 6px; }
+#note:focus { outline: 2px solid var(--accent); }
+button, select { background: #3a2f22; color: var(--ink); border: 1px solid #5a4a36; border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
+#right { background: var(--panel); overflow: auto; border-left: 1px solid #3a3026; display: flex; flex-direction: column; }
+#right h2 { margin: 12px 14px 4px; font-size: 15px; color: var(--dim); font-weight: 600; }
+#notes { list-style: none; margin: 0; padding: 0 8px 12px; }
+#notes li { padding: 8px 10px; margin: 6px 0; background: #2a231b; border-radius: 6px; cursor: pointer; }
+#notes li:hover { background: #352c22; } #notes .meta { font: 12px Consolas, monospace; color: var(--accent); display: flex; justify-content: space-between; }
+#notes .del { color: var(--red); background: none; border: 0; padding: 0 2px; font-size: 13px; }
+#help { font-size: 12px; color: var(--dim); padding: 0 14px 10px; }
+#status { color: #9aff7a; font-size: 13px; margin-left: 6px; }
+@media (max-width: 900px) { #app { grid-template-columns: 1fr; height: auto; } #right { max-height: 50vh; } #hud { flex-wrap: wrap; } #hud .line { text-align: left; flex-basis: 100%; } }
+#stage { position: relative; }
+#stage:has(#wait.on) { aspect-ratio: 16 / 9; }
+#wait { display: none; position: absolute; inset: 0; background: rgba(12,12,16,.92); align-items: center; justify-content: center; z-index: 5; }
+#wait.on { display: flex; }
+#wait .wbox { width: min(560px, 86%); color: #f4f4f6; font: 15px/1.4 system-ui, "Segoe UI", sans-serif; }
+#waitTitle { font-size: 22px; font-weight: 600; margin-bottom: 18px; }
+#wait .wrow { margin: 12px 0; }
+#wait .wl { font-size: 13px; color: #b8b8c4; margin-bottom: 6px; }
+#wait .wb { height: 10px; background: #2c2c36; border-radius: 6px; overflow: hidden; }
+#wait .wb i { display: block; height: 100%; background: #C9F62C; transition: width .6s; }
+#wait .we { font-size: 12px; color: #9a9aa6; margin-top: 4px; }
+#wait .wnote { font-size: 12px; color: #8a8a96; margin-top: 18px; }
+</style></head>
+<body><div id="app">
+<div id="left">
+  <div id="pieces"></div>
+  <div id="stage"><video id="vid" controls preload="auto"></video><canvas id="mark"></canvas>
+    <div id="wait"><div class="wbox"><div id="waitTitle"></div><div id="waitBars"></div><div class="wnote">It loads here by itself when it's ready.</div></div></div></div>
+  <div id="tl" title="cyan strip: changed in THIS draft · amber→red underneath: how many drafts have changed that spot (hotter = reworked more) · gold dots: this draft's notes · grey: earlier rounds (green fixed, red still broken) · click to jump"><canvas class="heat" id="heat"></canvas><div class="play" id="tlp"></div></div>
+  <div id="hud"><span id="heatkey"><b></b>this draft <i></i>changed in <span id="heatn">0</span> earlier drafts</span><span class="f" id="hf">f 0</span><span id="ht">0:00.00</span><span class="shot" id="hs"></span><span class="chgb" id="hc">CHANGED</span><span class="line" id="hl"></span></div>
+  <div id="bar">
+    <select id="draft"></select>
+    <input id="note" placeholder="Type a note for this frame, Enter to save (the video pauses while you type)" autocomplete="off">
+    <span id="rectinfo"></span><button id="clear">Clear boxes</button><button id="save">Save</button><button class="done" id="done">Done: send to Claude</button><span id="status"></span>
+  </div>
+  <div id="help">Cyan strip = changed in this draft; the amber→red heat under it = how many drafts changed that spot (go where it's hot) (Changes tab lists them; c / Shift+C: next / previous change) · Timeline dots: gold = this draft's notes, grey = earlier rounds still open (red if you mark them still broken); ✓ accept in the Earlier rounds tab removes a note from view for good · Paused: drag on the picture to box what you mean (drag again to add more boxes, right-click a box, Backspace or Clear boxes to remove) · Space: play/pause · ←/→: one frame · Shift+←/→: one second · Enter in the box: save note · Esc: back to the video · click a note to jump to it</div>
+</div>
+<div id="right"><div id="tabs"><button id="tabCur" class="on">This draft</button><button id="tabOld">Earlier rounds</button><button id="tabChg">Changes</button></div><h2 id="count">Notes</h2><ul id="notes"></ul></div>
+</div>
+<script>
+const FPS = 30, $ = id => document.getElementById(id), vid = $('vid');
+let draft = null, meta = { shots: [], lines: [] }, notes = [], frame = 0, changes = [], heat = { bin: .5, counts: [], max: 0 };
+const fmt = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, '0')}`;
+// a partial revision starts part-way into the song: the page shows and saves SONG time (video time + span.t0)
+const OFF = () => meta.span?.t0 || 0;
+const shotAt = t => (meta.shots.find(s => t >= s.t0 && t < (s.t1 ?? 1e9)) || {}).name || '';
+const lineAt = t => (meta.lines.find(l => t >= l.t0 - 0.2 && t < l.t1 + 0.6) || {}).text || '';
+const chgAt = t => changes.find(c => t >= c.t0 && t < c.t1);
+function hud(vt) { const t = vt + OFF(); const cg = chgAt(t); $('hc').classList.toggle('on', !!cg); $('hc').textContent = cg ? 'CHANGED' + (cg.label ? ': ' + cg.label : '') : ''; frame = Math.floor(t * FPS + 1e-3); $('hf').textContent = 'f ' + frame; $('ht').textContent = fmt(t) + (OFF() ? ` (clip ${fmt(vt)})` : ''); $('hs').textContent = shotAt(t); $('hl').textContent = lineAt(t); }
+const tick = (now, md) => { hud(md.mediaTime); vid.requestVideoFrameCallback(tick); };
+if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) vid.requestVideoFrameCallback(tick); else setInterval(() => hud(vid.currentTime), 33);
+vid.addEventListener('seeked', () => hud(vid.currentTime));
+// watchdog: if playback should be moving but the picture is stuck for 3 s (a stalled stream), reconnect at the same frame
+let lastT = -1, stuckSince = 0;
+setInterval(() => {
+  const want = !vid.paused || vid.seeking, moved = Math.abs(vid.currentTime - lastT) > 1e-3; lastT = vid.currentTime;
+  if (!want || moved || vid.ended) { stuckSince = 0; return; }
+  if (!stuckSince) stuckSince = Date.now();
+  if (Date.now() - stuckSince > 3000) { const t = vid.currentTime, playing = !vid.paused; stuckSince = 0; $('status').textContent = 'reconnecting video...';
+    const src = vid.src.split('?')[0]; vid.src = src + '?r=' + Date.now(); vid.currentTime = t; if (playing) vid.play().catch(() => {}); setTimeout(() => $('status').textContent = '', 1500); }
+}, 500);
+vid.addEventListener('error', () => { const t = vid.currentTime; const src = vid.src.split('?')[0]; vid.src = src + '?r=' + Date.now(); vid.currentTime = t; });
+// a draft still rendering: a progress bar over the picture until its review copy exists, then it loads by itself
+let waitTimer = null;
+async function waitFor(d) {
+  const st = $('wait'); clearTimeout(waitTimer);
+  let r; try { r = await (await fetch('/api/progress?draft=' + d)).json(); } catch { r = { pending: true, runs: [] }; }
+  if (d !== draft) return;
+  if (!r.pending) {                                   // ready: the review copy if it was made, else the master
+    st.classList.remove('on'); const q = '?r=' + Date.now(); vid.src = `/out/${d}.mp4${q}`;
+    fetch(`/out/${d}_review.mp4`, { method: 'HEAD' }).then(x => { if (x.ok && d === draft) vid.src = `/out/${d}_review.mp4${q}`; });
+    return; }
+  st.classList.add('on'); vid.pause();
+  const fmtE = s => s == null ? '' : s > 90 ? `${Math.round(s / 60)} min left` : `${Math.round(s)} s left`;
+  $('waitTitle').textContent = `${r.label} is rendering`;
+  $('waitBars').innerHTML = (r.runs.length ? r.runs : [{ job: 'waiting for the render to start', pct: 0 }]).map(x =>
+    `<div class="wrow"><div class="wl">${x.job}${x.where ? ' · ' + x.where : ''}</div><div class="wb"><i style="width:${Math.round(100 * (x.done ? 1 : Math.min(1, x.pct)))}%"></i></div>` +
+    `<div class="we">${x.done ? 'done, making the review copy' : Math.round(100 * Math.min(1, x.pct)) + '%  ' + (x.pct >= 1 || x.eta < 0 ? 'finishing' : fmtE(x.eta))}</div></div>`).join('');
+  waitTimer = setTimeout(() => waitFor(d), 3000);
+}
+async function loadDraft(d) {
+  // the seek-friendly full-res review copy if there is one (keyframe every second), else the master; the HUD shows frame, shot and lyric
+  draft = d; waitFor(d); vid.src = `/out/${d}.mp4`; fetch(`/out/${d}_review.mp4`, { method: 'HEAD' }).then(r => { if (r.ok) { const t = vid.currentTime; vid.src = `/out/${d}_review.mp4`; vid.currentTime = t; } });
+  meta = await (await fetch('/api/meta?draft=' + d)).json();
+  await loadChanges(d); await loadNotes();   // (a // comment used to swallow this line: notes looked gone after a reload)
+}
+// the cyan strip and heatmap: the server makes a missing change list itself, so while it works ("computing") ask again
+let chgTimer = null;
+async function loadChanges(d) {
+  clearTimeout(chgTimer); let r = { regions: [] };
+  try { r = await (await fetch('/api/changes?draft=' + d)).json(); } catch {}
+  if (d !== draft) return;
+  changes = (r.regions || []).sort((a, b) => a.t0 - b.t0);
+  try { heat = await (await fetch('/api/heat?draft=' + d)).json(); } catch { heat = { bin: .5, counts: [], max: 0 }; } $('heatn').textContent = heat.max ? `up to ${heat.max} of ${heat.drafts}` : '0';
+  $('tabChg').textContent = r.computing ? 'Changes (finding...)' : `Changes (${changes.length})`; timeline(); if (tab === 'chg') renderChg();
+  if (r.computing) chgTimer = setTimeout(() => loadChanges(d), 4000);
+}
+let history = [], tab = 'cur', showAccepted = false;
+const open = () => history.filter(n => n.verdict !== 'fixed');   // accepted notes leave the timeline and the list
+async function loadNotes() { notes = await (await fetch('/api/notes?draft=' + draft)).json(); history = await (await fetch('/api/history?draft=' + draft)).json();
+  $('tabOld').textContent = `Earlier rounds (${open().length} open)`; render(); }
+const setTab = t => { tab = t; ['Cur', 'Old', 'Chg'].forEach(k => $('tab' + k).classList.toggle('on', 'tab' + k === 'tab' + { cur: 'Cur', old: 'Old', chg: 'Chg' }[t])); render(); };
+$('tabCur').onclick = () => setTab('cur'); $('tabOld').onclick = () => setTab('old'); $('tabChg').onclick = () => setTab('chg');
+// hovering a note lights its dot on the timeline (and hovering a dot lights its note)
+const keyOf = n => (n.draft || draft) + ':' + n.id;
+function hl(n, on) { const k = keyOf(n); document.querySelectorAll(`#tl .dot[data-k="${k}"], #notes li[data-k="${k}"]`).forEach(e => e.classList.toggle('hl', on)); }
+const jump = n => { const vt = n.time - OFF(); if (vt < 0 || vt > (vid.duration || 1e9)) return; vid.currentTime = vt + 0.5 / FPS; vid.pause(); rects = []; shown = n.rects || null; drawMarks(); };
+function timeline() {   // every note as a dot on the song's timeline: gold this draft, grey/green/red the earlier rounds
+  const tl = $('tl'); tl.querySelectorAll('.dot, .chg').forEach(d => d.remove()); const dur = vid.duration || 1;
+  { const cv = $('heat'), r = tl.getBoundingClientRect(); cv.width = Math.max(1, Math.round(r.width)); cv.height = 34; const X = cv.getContext('2d'); X.clearRect(0, 0, cv.width, cv.height);
+    // scale from the baseline (whole-song re-times touch every moment): the 15th-percentile count shows as faint amber, the max as red
+    const sorted = heat.counts.filter(c => c > 0).sort((a, b) => a - b), lo = sorted.length ? sorted[Math.floor(sorted.length * .15)] - 1 : 0, m = Math.max(lo + 1, heat.max || 0);
+    heat.counts.forEach((c, i) => { if (!c) return; const a = i * heat.bin - OFF(), b = a + heat.bin; if (b <= 0 || a >= dur) return; const k = Math.max(0, (c - lo) / (m - lo)) ** 1.4;
+      const rC = Math.round(224 + (255 - 224) * k), gC = Math.round(160 + (58 - 160) * k), bC = Math.round(64 + (42 - 64) * k), al = .25 + .7 * k;
+      X.fillStyle = `rgba(${rC},${gC},${bC},${al})`; X.fillRect(cv.width * Math.max(0, a) / dur, 9, Math.max(1, cv.width * (Math.min(dur, b) - Math.max(0, a)) / dur + .5), cv.height - 9); }); }
+  for (const c of changes) { const a = Math.max(0, c.t0 - OFF()), b = Math.min(dur, c.t1 - OFF()); if (b <= 0 || a >= dur) continue;   // the newest: a cyan strip along the top
+    const e = document.createElement('div'); e.className = 'chg'; e.style.left = (100 * a / dur) + '%'; e.style.width = Math.max(0.25, 100 * (b - a) / dur) + '%';
+    e.title = `changed: ${c.label || ''} (${fmt(c.t0)}–${fmt(c.t1)})`; e.onclick = ev => { ev.stopPropagation(); jumpChg(c); }; tl.appendChild(e); }
+  const add = (n, cls) => { const vt = n.time - OFF(); if (vt < 0 || vt > dur) return; const d = document.createElement('div'); d.className = 'dot ' + cls; d.style.left = (100 * vt / dur) + '%'; d.dataset.k = keyOf(n);
+    d.onmouseenter = () => hl(n, true); d.onmouseleave = () => hl(n, false);
+    d.title = `${n.draft || draft} · ${fmt(n.time)} · ${n.text}`; d.onclick = e => { e.stopPropagation(); jump(n); }; tl.appendChild(d); };
+  (showAccepted ? history : open()).forEach(n => add(n, 'old' + (n.verdict ? ' ' + n.verdict : ''))); notes.forEach(n => add(n, 'cur'));
+}
+$('tl').onclick = e => { const r = $('tl').getBoundingClientRect(); vid.currentTime = (vid.duration || 0) * (e.clientX - r.left) / r.width; };
+vid.addEventListener('loadedmetadata', () => timeline()); vid.addEventListener('timeupdate', () => { $('tlp').style.left = (100 * vid.currentTime / (vid.duration || 1)) + '%'; });
+async function verdict(n, v) { const nv = n.verdict === v ? null : v; await fetch('/api/verdict', { method: 'POST', body: JSON.stringify({ draft, noteDraft: n.draft, id: n.id, verdict: nv }) }); n.verdict = nv; $('tabOld').textContent = `Earlier rounds (${open().length} open)`; render(); }
+function render() {
+  timeline();
+  if (tab === 'old') { renderOld(); return; }
+  if (tab === 'chg') { renderChg(); return; }
+  $('count').textContent = `Notes on ${draft}: ${notes.length}`;
+  $('notes').innerHTML = '';
+  for (const n of notes) {
+    const li = document.createElement('li'); li.dataset.k = keyOf(n); li.onmouseenter = () => hl(n, true); li.onmouseleave = () => hl(n, false);
+    li.innerHTML = `<div class="meta"><span>f ${n.frame} · ${fmt(n.time)} · ${n.shot || ''}${n.rects ? ` · <b class="box">${n.rects.length}▭</b>` : ''}</span><button class="del" title="delete">✕</button></div><div></div>`;
+    li.lastChild.textContent = n.text;
+    li.onclick = e => { if (e.target.classList.contains('del')) return; jump(n); };
+    li.querySelector('.del').onclick = async () => { await fetch('/api/delete', { method: 'POST', body: JSON.stringify({ draft, id: n.id }) }); loadNotes(); };
+    $('notes').appendChild(li);
+  }
+}
+// ---- boxes: drag rectangles over the paused frame; they are saved with the note (as fractions of the frame) plus a JPEG of the frame with the boxes drawn ----
+const mark = $('mark'), MX = mark.getContext('2d'); let rects = [], drag = null, shown = null;
+const vbox = () => { const r = vid.getBoundingClientRect(), vw = vid.videoWidth || 16, vh = vid.videoHeight || 9, s = Math.min(r.width / vw, r.height / vh);   // the picture inside the element (letterboxed)
+  return { x: (r.width - vw * s) / 2, y: (r.height - vh * s) / 2, w: vw * s, h: vh * s }; };
+function drawMarks() { const r = vid.getBoundingClientRect(); mark.width = r.width; mark.height = Math.max(0, r.height - 48); MX.clearRect(0, 0, mark.width, mark.height);
+  const b = vbox(), all = [...(shown || rects), ...(drag ? [drag] : [])];
+  all.forEach((q, i) => { MX.strokeStyle = shown ? '#7fd0ff' : '#ffd100'; MX.lineWidth = 3; MX.setLineDash(shown ? [8, 6] : []); MX.strokeRect(b.x + q.x * b.w, b.y + q.y * b.h, q.w * b.w, q.h * b.h);
+    MX.fillStyle = 'rgba(255,209,0,.12)'; MX.fillRect(b.x + q.x * b.w, b.y + q.y * b.h, q.w * b.w, q.h * b.h); MX.fillStyle = '#ffd100'; MX.font = 'bold 14px system-ui'; MX.fillText(String(i + 1), b.x + q.x * b.w + 5, b.y + q.y * b.h + 16); });
+  $('rectinfo').textContent = rects.length ? `${rects.length} box${rects.length > 1 ? 'es' : ''}` : ''; $('clear').style.display = rects.length ? 'inline-block' : 'none'; }
+const toFrac = e => { const r = mark.getBoundingClientRect(), b = vbox(); return { x: Math.min(1, Math.max(0, (e.clientX - r.left - b.x) / b.w)), y: Math.min(1, Math.max(0, (e.clientY - r.top - b.y) / b.h)) }; };
+mark.addEventListener('pointerdown', e => { if (e.button !== 0) return; shown = null; const p = toFrac(e); drag = { x0: p.x, y0: p.y, x: p.x, y: p.y, w: 0, h: 0 }; mark.setPointerCapture(e.pointerId); });
+mark.addEventListener('pointermove', e => { if (!drag) return; const p = toFrac(e); drag = { ...drag, x: Math.min(drag.x0, p.x), y: Math.min(drag.y0, p.y), w: Math.abs(p.x - drag.x0), h: Math.abs(p.y - drag.y0) }; drawMarks(); });
+mark.addEventListener('pointerup', () => { if (drag && drag.w > 0.01 && drag.h > 0.01) rects.push({ x: drag.x, y: drag.y, w: drag.w, h: drag.h }); else if (drag) { vid.play(); }   // a plain click plays, as before
+  drag = null; drawMarks(); });
+// right-click a box to remove it (the topmost one under the pointer), before the note is saved
+mark.addEventListener('contextmenu', e => { e.preventDefault(); if (drag) return; const p = toFrac(e);
+  for (let i = rects.length - 1; i >= 0; i--) { const q = rects[i]; if (p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h) { rects.splice(i, 1); break; } }
+  drawMarks(); });
+$('clear').onclick = () => { rects = []; drawMarks(); };
+const syncPaused = () => { $('stage').classList.toggle('paused', vid.paused); if (!vid.paused) { shown = null; } drawMarks(); };
+['pause', 'play', 'seeked', 'loadedmetadata'].forEach(ev => vid.addEventListener(ev, syncPaused)); addEventListener('resize', () => { drawMarks(); timeline(); });
+function snapshot() {   // the frame as the user sees it, with the boxes, at 1280 wide
+  if (!rects.length || !vid.videoWidth) return null; const c = document.createElement('canvas'); c.width = 1280; c.height = Math.round(1280 * vid.videoHeight / vid.videoWidth); const X = c.getContext('2d');
+  X.drawImage(vid, 0, 0, c.width, c.height); X.lineWidth = 4; X.strokeStyle = '#ffd100'; X.font = 'bold 22px system-ui';
+  rects.forEach((q, i) => { X.strokeRect(q.x * c.width, q.y * c.height, q.w * c.width, q.h * c.height); X.fillStyle = '#000'; X.fillRect(q.x * c.width, q.y * c.height, 26, 26); X.fillStyle = '#ffd100'; X.fillText(String(i + 1), q.x * c.width + 6, q.y * c.height + 21); });
+  try { return c.toDataURL('image/jpeg', 0.85); } catch { return null; } }
+const jumpChg = c => { const vt = Math.max(0, c.t0 - OFF() - 1.5); vid.currentTime = vt; vid.play().catch(() => {}); };   // land 1.5 s before, playing, so the change is seen in context
+function renderChg() {   // what changed since the previous draft, in order: click to watch it
+  $('count').textContent = changes.length ? `Changed since the previous draft: ${changes.length}` : 'No change list for this draft';
+  $('notes').innerHTML = ''; const now = vid.currentTime + OFF();
+  for (const c of changes) {
+    const li = document.createElement('li'); li.className = 'chgrow' + (now >= c.t0 && now < c.t1 ? ' here' : '');
+    li.innerHTML = `<div class="meta"><span>${fmt(c.t0)}–${fmt(c.t1)} · ${shotAt(c.t0)}</span></div><div></div>`; li.lastChild.textContent = c.label || 'changed';
+    li.onclick = () => jumpChg(c); $('notes').appendChild(li);
+  }
+}
+function renderOld() {   // earlier rounds, newest first: the note, its marked frame, and "fixed / still broken" for this draft
+  const acc = history.length - open().length; $('count').innerHTML = `Open: ${open().length} · accepted ${acc} <a href="#" id="togAcc" style="color:#7fd0ff">${showAccepted ? 'hide' : 'show'} accepted</a>`;
+  $('notes').innerHTML = ''; $('togAcc').onclick = e => { e.preventDefault(); showAccepted = !showAccepted; render(); };
+  for (const n of [...(showAccepted ? history : open())].sort((a, b) => a.time - b.time)) {
+    const li = document.createElement('li'); li.className = 'old'; li.dataset.k = keyOf(n); li.onmouseenter = () => hl(n, true); li.onmouseleave = () => hl(n, false);
+    li.innerHTML = `<div class="meta"><span>${n.draft} · ${fmt(n.time)} · ${n.shot || ''}${n.rects ? ` · <b class="box">${n.rects.length}▭</b>` : ''}</span></div><div class="tx"></div>${n.img ? `<img loading="lazy" src="/${n.img}">` : ''}
+      <div class="vd"><button class="fx ${n.verdict === 'fixed' ? 'on' : ''}">✓ accept</button><button class="br ${n.verdict === 'broken' ? 'on' : ''}">✗ still broken</button></div>`;
+    li.querySelector('.tx').textContent = n.text;
+    li.onclick = e => { if (e.target.tagName === 'BUTTON') return; jump(n); };
+    li.querySelector('.fx').onclick = () => verdict(n, 'fixed'); li.querySelector('.br').onclick = () => verdict(n, 'broken');
+    $('notes').appendChild(li);
+  }
+}
+async function save() {
+  const text = $('note').value.trim(); if (!text) return;
+  const t = vid.currentTime + OFF();
+  /* a save that fails says so loudly and keeps the text (draft12b's notes were lost silently) */
+  let ok = false; try { const r = await fetch('/api/notes', { method: 'POST', body: JSON.stringify({ draft, frame, time: t, shot: shotAt(t), line: lineAt(t), text, rects, img: snapshot() }) }); ok = r.ok; } catch (e) {}
+  if (!ok) { $('status').textContent = 'NOT SAVED: the review server did not answer. Your note is still in the box.'; $('status').style.color = '#ff6a50'; return; }
+  $('status').style.color = '';
+  rects = []; drawMarks();
+  $('note').value = ''; $('status').textContent = 'saved'; setTimeout(() => $('status').textContent = '', 1200); loadNotes();
+}
+$('save').onclick = save;
+$('note').addEventListener('focus', () => vid.pause());
+$('note').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); } if (e.key === 'Escape') { $('note').blur(); } });
+$('done').onclick = async () => { try { const r = await (await fetch('/api/done', { method: 'POST', body: JSON.stringify({ draft }) })).json(); $('status').style.color = ''; $('status').textContent = `sent ${r.count} notes: tell Claude "notes are in"`; }
+  catch (e) { $('status').style.color = '#ff6a50'; $('status').textContent = 'NOT SENT: the review server did not answer.'; } };
+addEventListener('keydown', e => {
+  if (e.target === $('note')) return;
+  if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); vid.pause(); vid.currentTime = Math.max(0, vid.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / FPS)); }
+  if (e.key === 'n') { e.preventDefault(); $('note').focus(); }
+  if (e.key === 'c' || e.key === 'C') { e.preventDefault(); const now = vid.currentTime + OFF();
+    const c = e.shiftKey ? [...changes].reverse().find(x => x.t0 < now - 2) : changes.find(x => x.t0 > now + 0.5); if (c) jumpChg(c); }
+  if (e.key === 'Backspace' && rects.length) { e.preventDefault(); rects.pop(); drawMarks(); }
+});
+$('draft').onchange = e => loadDraft(e.target.value);
+// pieces: <piece>-draftN names group into tabs (no prefix = the main video); each tab lists only its own drafts, newest first
+const PRE = /^(?:([a-z][a-z0-9]*)-)?draft\d+[a-z]?$/, pieceOf = d => (PRE.exec(d) || [])[1] || '';
+let allDrafts = [], labels = {};
+function showPiece(pc) {
+  const ds = allDrafts.filter(d => pieceOf(d) === pc);
+  document.querySelectorAll('#pieces button').forEach(b => b.classList.toggle('on', b.dataset.p === pc));
+  $('draft').innerHTML = ds.map(d => `<option>${d}</option>`).join(''); if (ds.length) loadDraft(ds[0]);
+  try { localStorage.setItem('harness-piece', pc); } catch {}
+}
+(async () => {
+  allDrafts = await (await fetch('/api/drafts')).json();
+  try { labels = await (await fetch('/api/pieces')).json(); } catch { labels = {}; }
+  const pcs = [...new Set(allDrafts.map(pieceOf))].sort((a, b) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)));
+  if (pcs.length > 1) {
+    $('pieces').classList.add('on');
+    $('pieces').innerHTML = pcs.map(pc => `<button data-p="${pc}">${labels[pc] || (pc || 'Main')}<span class="n">${allDrafts.filter(d => pieceOf(d) === pc).length}</span></button>`).join('');
+    document.querySelectorAll('#pieces button').forEach(b => b.onclick = () => showPiece(b.dataset.p));
+  }
+  let start = ''; try { start = localStorage.getItem('harness-piece') || ''; } catch {}
+  showPiece(pcs.includes(start) ? start : pcs[0] ?? '');
+})();
+</script>
+</body></html>
