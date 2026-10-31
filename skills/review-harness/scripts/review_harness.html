@@ -48,6 +48,8 @@ button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
 #notes .del { color: var(--red); background: none; border: 0; padding: 0 2px; font-size: 13px; }
 #help { font-size: 12px; color: var(--dim); padding: 0 14px 10px; }
 #status { color: #9aff7a; font-size: 13px; margin-left: 6px; }
+#newer { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 50; background: #b8860b; color: #fff; font: 700 15px system-ui; padding: 10px 18px; border-radius: 6px; cursor: pointer; box-shadow: 0 2px 12px #0008; }
+#newer.on { display: block; }
 @media (max-width: 900px) { #app { grid-template-columns: 1fr; height: auto; } #right { max-height: 50vh; } #hud { flex-wrap: wrap; } #hud .line { text-align: left; flex-basis: 100%; } }
 #stage { position: relative; }
 #stage:has(#wait.on) { aspect-ratio: 16 / 9; }
@@ -70,7 +72,7 @@ button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
   <div id="tl" title="cyan strip: changed in THIS draft · amber→red underneath: how many drafts have changed that spot (hotter = reworked more) · gold dots: this draft's notes · grey: earlier rounds (green fixed, red still broken) · click to jump"><canvas class="heat" id="heat"></canvas><div class="play" id="tlp"></div></div>
   <div id="hud"><span id="heatkey"><b></b>this draft <i></i>changed in <span id="heatn">0</span> earlier drafts</span><span class="f" id="hf">f 0</span><span id="ht">0:00.00</span><span class="shot" id="hs"></span><span class="chgb" id="hc">CHANGED</span><span class="line" id="hl"></span></div>
   <div id="bar">
-    <select id="draft"></select>
+    <select id="draft"></select><div id="newer"></div>
     <input id="note" placeholder="Type a note for this frame, Enter to save (the video pauses while you type)" autocomplete="off">
     <span id="rectinfo"></span><button id="clear">Clear boxes</button><button id="save">Save</button><button class="done" id="done">Done: send to Claude</button><span id="status"></span>
   </div>
@@ -275,5 +277,16 @@ function showPiece(pc) {
   let start = ''; try { start = localStorage.getItem('harness-piece') || ''; } catch {}
   showPiece(pcs.includes(start) ? start : pcs[0] ?? '');
 })();
+
+// a tab left open across renders kept playing the old draft (cancel-netflix, 2026-10-29: draft 2 notes taken while draft 3
+// was out): every 20 s look for a newer draft of this piece and put a banner up; never switch under the user mid-watch
+setInterval(async () => {
+  let ds; try { ds = await (await fetch('/api/drafts')).json(); } catch { return; }
+  const pc = pieceOf(draft), mine = ds.filter(d => pieceOf(d) === pc), fresh = mine.filter(d => !allDrafts.includes(d));
+  if (fresh.length) { allDrafts = ds; $('draft').innerHTML = mine.map(d => `<option>${d}</option>`).join(''); $('draft').value = draft; }
+  const nb = $('newer');
+  if (mine.length && mine[0] !== draft) { nb.textContent = `You're watching ${draft}. ${mine[0]} is out: click to switch`; nb.onclick = () => { nb.classList.remove('on'); $('draft').value = mine[0]; loadDraft(mine[0]); }; nb.classList.add('on'); }
+  else nb.classList.remove('on');
+}, 20000);
 </script>
 </body></html>

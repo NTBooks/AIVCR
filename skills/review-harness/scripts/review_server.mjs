@@ -24,8 +24,8 @@ const notesFile = d => path.join(ROOT, 'review', `notes_${d}.json`);
 const readNotes = d => existsSync(notesFile(d)) ? JSON.parse(readFileSync(notesFile(d), 'utf8')) : [];
 const json = (res, o, code = 200) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(o)); };
 const body = req => new Promise(r => { let b = ''; req.on('data', c => b += c); req.on('end', () => { try { r(JSON.parse(b || '{}')); } catch { r({}); } }); });
-// the lyric lines, wherever this project keeps them (template: player/lines.json; Glazy: audio/lyrics.json)
-const linesFor = () => { for (const f of ['player/lines.json', 'player/data/lines.json', 'audio/lyrics.json']) { const p = path.join(ROOT, f); if (!existsSync(p)) continue;
+// the lyric lines, wherever this project keeps them (template: player/lines.json; Glazy: audio/lyrics.json; Pocket No: player2/, its player/ is the old v1)
+const linesFor = () => { for (const f of ['player2/lines.json', 'player/lines.json', 'player/data/lines.json', 'audio/lyrics.json']) { const p = path.join(ROOT, f); if (!existsSync(p)) continue;
   const j = JSON.parse(readFileSync(p, 'utf8')), L = Array.isArray(j) ? j : j.lines ?? []; return L.filter(l => l.t0 != null).map(l => ({ t0: l.t0, t1: l.t1, text: l.text })); } return []; };
 const safe = d => /^[\w-]+$/.test(d || '') ? d : null;
 // One harness, several videos (user, 2026-10-25: "make 1 harness with multiple tabs when we have multiple shorts and a cut
