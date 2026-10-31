@@ -1,7 +1,7 @@
 // Records the README demo: drives the review harness like a person would (fake cursor, captions) and saves an MP4
 // (Chrome's screencast frames, put together by ffmpeg on the PATH).
-//   sh demo/make_demo_project.sh /tmp/aivs-demo
-//   node skills/review-harness/scripts/review_server.mjs 5190 /tmp/aivs-demo
+//   sh demo/make_demo_project.sh /tmp/aivcr-demo
+//   node skills/review-harness/scripts/review_server.mjs 5190 /tmp/aivcr-demo
 //   node demo/record_demo.mjs http://127.0.0.1:5190/ demo/out        (needs: npm i playwright; npx playwright install chromium)
 // then: sh demo/to_gif.sh demo/out/demo.mp4 assets/demo.gif
 import path from 'node:path'; import { mkdirSync, writeFileSync, rmSync } from 'node:fs'; import { execFileSync } from 'node:child_process';

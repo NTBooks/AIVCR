@@ -1,8 +1,9 @@
-<p align="center"><img src="assets/logo.png" alt="AIVS - AI Video Studio" width="640"></p>
+<p align="center"><img src="assets/logo.png" alt="AIVCR - AI Video Creation Repo" width="640"></p>
 
-# AIVS - AI Video Studio
+# AIVCR - AI Video Creation Repo
 
-Tools for making videos with an AI agent. They keep a person in charge of every frame. The first one is the
+Tools for making videos with an AI agent. They keep a person in charge of every frame. Think of it as an AI VCR for
+cutting the old way: watch the tape, stop on the frame, mark it up, hand back the notes. The first one is the
 **review harness**, a [Claude Code](https://claude.com/claude-code) skill. You watch a draft in your browser, pause
 on a frame, box what you mean and type a note. Claude reads your notes, marked-up frames included, before it touches
 the next draft.
@@ -30,11 +31,11 @@ You need [Claude Code](https://claude.com/claude-code), Node 18+, Python 3 with 
 macOS / Linux:
 
 ```bash
-git clone https://github.com/NTBooks/AIVS.git
+git clone https://github.com/NTBooks/AIVCR.git
 ```
 
 ```bash
-mkdir -p ~/.claude/skills && cp -r AIVS/skills/review-harness ~/.claude/skills/
+mkdir -p ~/.claude/skills && cp -r AIVCR/skills/review-harness ~/.claude/skills/
 ```
 
 ```bash
@@ -44,11 +45,11 @@ pip install numpy
 Windows (PowerShell):
 
 ```powershell
-git clone https://github.com/NTBooks/AIVS.git
+git clone https://github.com/NTBooks/AIVCR.git
 ```
 
 ```powershell
-Copy-Item -Recurse AIVS\skills\review-harness "$HOME\.claude\skills\"
+Copy-Item -Recurse AIVCR\skills\review-harness "$HOME\.claude\skills\"
 ```
 
 ```powershell
