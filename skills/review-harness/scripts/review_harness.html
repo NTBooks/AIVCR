@@ -112,8 +112,10 @@ async function waitFor(d) {
   let r; try { r = await (await fetch('/api/progress?draft=' + d)).json(); } catch { r = { pending: true, runs: [] }; }
   if (d !== draft) return;
   if (!r.pending) {                                   // ready: the review copy if it was made, else the master
-    st.classList.remove('on'); const q = '?r=' + Date.now(); vid.src = `/out/${d}.mp4${q}`;
-    fetch(`/out/${d}_review.mp4`, { method: 'HEAD' }).then(x => { if (x.ok && d === draft) vid.src = `/out/${d}_review.mp4${q}`; });
+    // pick the source once (the review copy if it exists, else the master): every swap restarts loading and shows a spinner
+    st.classList.remove('on'); const q = '?r=' + Date.now(); let ok = false;
+    try { ok = (await fetch(`/out/${d}_review.mp4`, { method: 'HEAD' })).ok; } catch {}
+    if (d === draft) vid.src = ok ? `/out/${d}_review.mp4${q}` : `/out/${d}.mp4${q}`;
     return; }
   st.classList.add('on'); vid.pause();
   const fmtE = s => s == null ? '' : s > 90 ? `${Math.round(s / 60)} min left` : `${Math.round(s)} s left`;
@@ -124,8 +126,7 @@ async function waitFor(d) {
   waitTimer = setTimeout(() => waitFor(d), 3000);
 }
 async function loadDraft(d) {
-  // the seek-friendly full-res review copy if there is one (keyframe every second), else the master; the HUD shows frame, shot and lyric
-  draft = d; waitFor(d); vid.src = `/out/${d}.mp4`; fetch(`/out/${d}_review.mp4`, { method: 'HEAD' }).then(r => { if (r.ok) { const t = vid.currentTime; vid.src = `/out/${d}_review.mp4`; vid.currentTime = t; } });
+  draft = d; waitFor(d);   // waitFor loads the video (or shows the progress bar while it renders)
   meta = await (await fetch('/api/meta?draft=' + d)).json();
   await loadChanges(d); await loadNotes();   // (a // comment used to swallow this line: notes looked gone after a reload)
 }

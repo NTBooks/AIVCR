@@ -19,7 +19,7 @@ await ctx.addInitScript(() => addEventListener('DOMContentLoaded', () => {
     .drip { position: fixed; z-index: 99998; width: 34px; height: 34px; margin: -17px; border-radius: 50%; border: 3px solid #ffd100; pointer-events: none; animation: drip .5s ease-out forwards; }
     .drip.r { border-color: #ff5a4a; }
     @keyframes drip { from { transform: scale(.3); opacity: 1 } to { transform: scale(1.4); opacity: 0 } }
-    #dcap { position: fixed; z-index: 99997; left: calc((100% - 380px) / 2); top: 14px; transform: translateX(-50%); width: max-content; max-width: 820px; padding: 10px 18px; border-radius: 8px;
+    #dcap { position: fixed; z-index: 99997; left: calc((100% - 380px) / 2); top: 372px; transform: translateX(-50%); width: max-content; max-width: 820px; padding: 10px 18px; border-radius: 8px;
       background: rgba(10,10,14,.88); color: #fff; font: 600 19px/1.3 system-ui, sans-serif; text-align: center; box-shadow: 0 4px 20px #0008; transition: opacity .25s; }
     #dcap:empty { opacity: 0; }`;
   document.head.appendChild(s);
@@ -45,9 +45,10 @@ const pic = () => page.evaluate(() => { const v = document.getElementById('vid')
   return { x: r.left + (r.width - v.videoWidth * s) / 2, y: r.top + (r.height - v.videoHeight * s) / 2, w: v.videoWidth * s, h: v.videoHeight * s }; });
 const at = (p, fx, fy) => [p.x + fx * p.w, p.y + fy * p.h];
 
-await page.goto(URL); await page.mouse.move(mx, my); await startCast();
-await page.waitForFunction(() => document.getElementById('vid').readyState >= 2 && document.querySelectorAll('#tl .chg').length > 0, null, { timeout: 30000 });
-await wait(800);
+await page.goto(URL); await page.mouse.move(mx, my);
+// start filming once the video has loaded and the change strip is drawn, so the GIF never opens on a spinner
+await page.waitForFunction(() => { const v = document.getElementById('vid'); return v.readyState >= 3 && !v.seeking && document.querySelectorAll('#tl .chg').length > 0; }, null, { timeout: 30000 });
+await wait(500); await startCast(); await wait(800);
 await cap('Draft 3 of a video. Cyan = what changed since draft 2. Red heat underneath = spots reworked again and again.');
 const tl = await box('#tl'); await move(tl.b.x + tl.b.width * .2, tl.y); await wait(900);
 const chg = await box('#tl .chg'); await move(chg.x, chg.y - 2, 22); await wait(1800);
@@ -56,12 +57,12 @@ await page.keyboard.press('c'); await wait(2600);
 await page.keyboard.press(' '); await wait(400);
 await cap('Paused. Drag boxes over what you mean.');
 let p = await pic();
-let [a, b] = at(p, .21, .14), [c, d] = at(p, .3, .29);
+let [a, b] = at(p, .165, .045), [c, d] = at(p, .255, .2);   // around the moon in the night shot
 await move(a, b); await page.mouse.down(); await move(c, d, 20); await page.mouse.up(); await wait(500);
-[a, b] = at(p, .6, .62); [c, d] = at(p, .85, .82);
+[a, b] = at(p, .55, .4); [c, d] = at(p, .8, .62);
 await move(a, b); await page.mouse.down(); await move(c, d, 20); await page.mouse.up(); await wait(900);
 await cap('Drew one by mistake? Right-click it to remove it.');
-[a, b] = at(p, .72, .72); await click(a, b, { button: 'right' }); await wait(1300);
+[a, b] = at(p, .67, .51); await click(a, b, { button: 'right' }); await wait(1300);
 await cap('Type the note. It saves the frame, shot, lyric line and a picture of the frame with your boxes.');
 const note = await box('#note'); await click(note.x, note.y); await wait(300);
 await page.keyboard.type('Moon reads well. Make it glow a little and drop the sky one stop.', { delay: 38 });

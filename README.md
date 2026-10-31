@@ -115,7 +115,7 @@ review/notes_draft2.done          you pressed Done
 
 ## The demo GIF
 
-It's recorded from a made-up three-draft video, so it can be remade after the page changes. `demo/make_demo_project.sh`
+It is recorded from a made-up three-draft video: seven stills made with Nano Banana (demo/stills, prompts in demo/prompts) cut into a 20 s drive with slow camera moves, so it can be remade after the page changes. `demo/make_demo_project.sh`
 builds the project, `demo/record_demo.mjs` drives the page with Playwright, and `demo/to_gif.sh` makes the GIF. The
 steps are at the top of `record_demo.mjs`.
 
