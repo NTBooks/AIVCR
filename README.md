@@ -14,6 +14,13 @@ Two rounds in 48 seconds. On draft 1 you box the sky and ask for night. Draft 2 
 timeline, and a wipe compares it with the frame you marked. The moon is dull, so you box it and ask for a brighter
 one. Draft 3 lands, you wipe again, and both notes are closed.
 
+## What it's for
+
+Videos an agent builds from code and stills: motion graphics, animated stills, lyric videos, title cards, explainers.
+It also works on videos with real footage in them when the agent's job is the overlays and cuts around it: captions,
+callouts, blurs, cards, trims. The diff compares drafts frame by frame at the same moment, so a change to an overlay
+shows up as just that stretch. A cut that moves everything after it marks the rest of the video as changed.
+
 ## The review harness
 
 - **Frame-accurate notes.** The page shows the frame number, time, shot name and the line being sung. Every note saves
