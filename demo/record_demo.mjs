@@ -2,11 +2,12 @@
 // (Chrome's screencast frames, put together by ffmpeg on the PATH).
 //   sh demo/make_demo_project.sh /tmp/aivcr-demo
 //   node skills/review-harness/scripts/review_server.mjs 5190 /tmp/aivcr-demo
-//   node demo/record_demo.mjs http://127.0.0.1:5190/ demo/out        (needs: npm i playwright; npx playwright install chromium)
+//   node demo/record_demo.mjs http://127.0.0.1:5190/ demo/out /tmp/aivcr-demo   (needs: npm i playwright; npx playwright install chromium)
+// Two rounds: a note on draft 1, draft 2 lands and the note is accepted, a second note, draft 3 lands, accepted.
 // then: sh demo/to_gif.sh demo/out/demo.mp4 assets/demo.gif
-import path from 'node:path'; import { mkdirSync, writeFileSync, rmSync } from 'node:fs'; import { execFileSync } from 'node:child_process';
+import path from 'node:path'; import { mkdirSync, writeFileSync, rmSync, readdirSync, renameSync } from 'node:fs'; import { execFileSync } from 'node:child_process';
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const URL = process.argv[2] || 'http://127.0.0.1:5190/', OUT = path.resolve(process.argv[3] || 'demo/out');
+const URL = process.argv[2] || 'http://127.0.0.1:5190/', OUT = path.resolve(process.argv[3] || 'demo/out'), PROJECT = path.resolve(process.argv[4] || '/tmp/aivcr-demo');
 const W = 1280, H = 720;
 const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
 const ctx = await browser.newContext({ viewport: { width: W, height: H } });
@@ -45,42 +46,67 @@ const pic = () => page.evaluate(() => { const v = document.getElementById('vid')
   return { x: r.left + (r.width - v.videoWidth * s) / 2, y: r.top + (r.height - v.videoHeight * s) / 2, w: v.videoWidth * s, h: v.videoHeight * s }; });
 const at = (p, fx, fy) => [p.x + fx * p.w, p.y + fy * p.h];
 
+// a full-screen card for the time Claude spends on the next draft
+const card = (t, on) => page.evaluate(([t, on]) => { let c = document.getElementById('dcard');
+  if (!c) { c = document.createElement('div'); c.id = 'dcard'; c.style.cssText = 'position:fixed;inset:0;z-index:99996;display:flex;align-items:center;justify-content:center;background:rgba(8,8,12,.93);color:#fff;font:600 30px/1.35 system-ui,sans-serif;text-align:center;padding:0 80px;white-space:pre-line;transition:opacity .3s;opacity:0'; document.body.appendChild(c); }
+  c.textContent = t; c.style.opacity = on ? 1 : 0; }, [t, on]);
+const ready = () => page.waitForFunction(() => { const v = document.getElementById('vid'); return v.readyState >= 3 && !v.seeking; }, null, { timeout: 30000 });
+// the next draft lands: move it out of staged/ (where make_demo_project.sh put it) into out/, as a render would
+const deliver = n => { for (const f of readdirSync(path.join(PROJECT, 'staged')).filter(f => f.startsWith(`draft${n}`))) renameSync(path.join(PROJECT, 'staged', f), path.join(PROJECT, 'out', f)); };
+const seekTo = async t => { const tl = await box('#tl'); const dur = await page.evaluate(() => document.getElementById('vid').duration); await click(tl.b.x + tl.b.width * t / dur, tl.y); await wait(500); };
+const drag = async (p, x0, y0, x1, y1) => { const [a, b] = at(p, x0, y0), [c, d] = at(p, x1, y1); await move(a, b); await page.mouse.down(); await move(c, d, 20); await page.mouse.up(); await wait(400); };
+const note = async text => { const n = await box('#note'); await click(n.x, n.y); await wait(250); await page.keyboard.type(text, { delay: 32 }); await wait(350); await page.keyboard.press('Enter'); await wait(900); };
+const doneBtn = async () => { const d = await box('#done'); await click(d.x, d.y); await wait(1200); };
+// open the earlier note, sweep the before/after divider across the picture, then accept it
+const accept = async () => { const o = await box('#tabOld'); await click(o.x, o.y); await wait(700);
+  const t = await box('#notes li.old .tx'); await click(t.x, t.y); await wait(900);
+  const c = await page.locator('#cmp').boundingBox(), y = c.y + c.height * .7;
+  await move(c.x + c.width * .5, y); await page.mouse.down();
+  await move(c.x + c.width * .92, y, 28); await wait(500); await move(c.x + c.width * .08, y, 50); await wait(600); await move(c.x + c.width * .5, y, 28);
+  await page.mouse.up(); await wait(900);
+  const a = await page.locator('#notes li.old button.fx').first().boundingBox(); await click(a.x + a.width / 2, a.y + a.height / 2); await wait(1000);
+  await page.keyboard.press('Escape'); const cu = await box('#tabCur'); await click(cu.x, cu.y); await wait(300); };
+const nextRound = async (n, text) => { await cap(''); await card(text, true); await wait(2200); deliver(n); await page.reload(); await ready(); await wait(300); await startCast(); };
+
 await page.goto(URL); await page.mouse.move(mx, my);
-// start filming once the video has loaded and the change strip is drawn, so the GIF never opens on a spinner
-await page.waitForFunction(() => { const v = document.getElementById('vid'); return v.readyState >= 3 && !v.seeking && document.querySelectorAll('#tl .chg').length > 0; }, null, { timeout: 30000 });
-await wait(500); await startCast(); await wait(800);
-await cap('Draft 3 of a video. Cyan = what changed since draft 2. Red heat underneath = spots reworked again and again.');
-const tl = await box('#tl'); await move(tl.b.x + tl.b.width * .2, tl.y); await wait(900);
-const chg = await box('#tl .chg'); await move(chg.x, chg.y - 2, 22); await wait(1800);
-await cap('Press c to jump to the next change. It starts 1.5 s early so you see it in context.');
-await page.keyboard.press('c'); await wait(2600);
-await page.keyboard.press(' '); await wait(400);
-await cap('Paused. Drag boxes over what you mean.');
+await page.waitForFunction(() => document.getElementById('vid').readyState >= 3, null, { timeout: 30000 });
+await wait(500); await startCast(); await wait(500);
+
+// round 1: daytime, ask for night
+await cap('Draft 1. Watch it, stop where something is wrong.');
+await seekTo(13.2); await wait(1200);
 let p = await pic();
-let [a, b] = at(p, .165, .045), [c, d] = at(p, .255, .2);   // around the moon in the night shot
-await move(a, b); await page.mouse.down(); await move(c, d, 20); await page.mouse.up(); await wait(500);
-[a, b] = at(p, .55, .4); [c, d] = at(p, .8, .62);
-await move(a, b); await page.mouse.down(); await move(c, d, 20); await page.mouse.up(); await wait(900);
-await cap('Drew one by mistake? Right-click it to remove it.');
-[a, b] = at(p, .67, .51); await click(a, b, { button: 'right' }); await wait(1300);
-await cap('Type the note. It saves the frame, shot, lyric line and a picture of the frame with your boxes.');
-const note = await box('#note'); await click(note.x, note.y); await wait(300);
-await page.keyboard.type('Moon reads well. Make it glow a little and drop the sky one stop.', { delay: 38 });
-await wait(400); await page.keyboard.press('Enter'); await wait(1600);
-await cap('Earlier rounds: notes from past drafts stay open until you accept them.');
-const old = await box('#tabOld'); await click(old.x, old.y); await wait(1300);
-const acc = page.locator('#notes li.old').filter({ hasText: 'Still no night' }).locator('button.fx');
-const ab = await acc.boundingBox(); await click(ab.x + ab.width / 2, ab.y + ab.height / 2); await wait(1500);
-await cap('Changes: every changed stretch, click to watch it.');
-const ch = await box('#tabChg'); await click(ch.x, ch.y); await wait(1200);
-const row = await box('#notes li.chgrow'); await click(row.x, row.y); await wait(2200);
-await page.keyboard.press(' ');
-await cap('Done sends the round to Claude, which reads every note and opens every marked frame first.');
-const done = await box('#done'); await click(done.x, done.y); await wait(2600);
+await cap('Box what you mean. Drew a wrong one? Right-click it away.');
+await drag(p, .03, .03, .5, .32); await drag(p, .55, .5, .8, .75); await wait(500);
+{ const [a, b] = at(p, .67, .62); await click(a, b, { button: 'right' }); } await wait(800);
+await cap('Type the note. It keeps the frame, the shot, the lyric and a picture with your boxes.');
+await note('This should be night. Put a moon over the sea.');
+await cap('Done sends the round to Claude.'); await doneBtn();
+await nextRound(2, 'Claude reads the note, opens the boxed frame,\nand renders draft 2');
+
+// round 2: night arrives, but the moon is dull
+await cap('Draft 2. Cyan on the timeline = what changed. Press c to jump there.');
+{ const s = await box('#tl .chg'); await move(s.x, s.y - 2, 22); } await wait(1400);
+await page.keyboard.press('c'); await wait(2700); await page.keyboard.press(' '); await wait(500);
+await cap('Open your note: drag across to wipe between the frame you marked and the new draft.');
+await accept();
+await cap('Night works. The moon is too dull.');
+p = await pic(); await drag(p, .15, .04, .27, .22); await wait(400);
+await note('Moon is too dull. Make it big and bright, lighting up the water.');
+await doneBtn();
+await nextRound(3, 'Claude makes draft 3');
+
+// round 3: the bright moon
+await cap('Draft 3. The heatmap under the strip: this spot has now been reworked twice.');
+{ const s = await box('#tl .chg'); await move(s.x, s.y + 8, 22); } await wait(1600);
+await page.keyboard.press('c'); await wait(2700); await page.keyboard.press(' '); await wait(500);
+await cap('Before and after. Accept it and the note closes.');
+await accept();
+await cap('Two notes, two drafts, both fixed. Nothing lost between rounds.'); await wait(2400);
 await cap(''); await wait(400);
 await cdp.send('Page.stopScreencast'); await browser.close();
 const name = i => `${String(i).padStart(5, '0')}.jpg`;
-const list = shots.map((t, i) => `file '${name(i)}'\nduration ${Math.max(0.001, (shots[i + 1] ?? t + 0.5) - t).toFixed(4)}`);
+const list = shots.map((t, i) => `file '${name(i)}'\nduration ${Math.max(0.001, Math.min(1, (shots[i + 1] ?? t + 0.5) - t)).toFixed(4)}`);
 writeFileSync(path.join(FR, 'list.txt'), [...list, `file '${name(shots.length - 1)}'`].join('\n') + '\n');
 const mp4 = path.join(OUT, 'demo.mp4');
 execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', path.join(FR, 'list.txt'), '-vf', 'fps=30,scale=1280:-2', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', mp4], { cwd: FR });

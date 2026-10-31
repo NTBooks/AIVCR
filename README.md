@@ -8,7 +8,11 @@ cutting the old way: watch the tape, stop on the frame, mark it up, hand back th
 on a frame, box what you mean and type a note. Claude reads your notes, marked-up frames included, before it touches
 the next draft.
 
-<p align="center"><img src="assets/demo.gif" alt="The review harness: the change strip and heatmap, boxes on a paused frame (one removed with a right-click), a note, accepting an earlier note, the Changes tab, Done" width="900"></p>
+<p align="center"><img src="assets/demo.gif" alt="Two review rounds: a boxed note asks for night, draft 2 arrives at night and a before/after wipe compares it with the marked daytime frame; a second note asks for a brighter moon, draft 3 arrives and the wipe shows the dull moon against the bright one" width="860"></p>
+
+Two rounds in 48 seconds. On draft 1 you box the sky and ask for night. Draft 2 lands with the change lit up on the
+timeline, and a wipe compares it with the frame you marked. The moon is dull, so you box it and ask for a brighter
+one. Draft 3 lands, you wipe again, and both notes are closed.
 
 ## The review harness
 
@@ -21,6 +25,8 @@ the next draft.
   work keeps coming back there.
 - **Earlier rounds.** Notes from earlier drafts stay on the timeline until you mark them fixed. Mark a note "still
   broken" and Claude fixes it first.
+- **Before and after.** Click an earlier note and drag across the picture to wipe between the frame you marked, boxes
+  and all, and the new draft at the same moment.
 - **Several videos in one project.** A main cut, a P.S. and Shorts each get a tab.
 - **Local only.** One Node server on 127.0.0.1, no accounts, nothing uploaded.
 
@@ -115,7 +121,7 @@ review/notes_draft2.done          you pressed Done
 
 ## The demo GIF
 
-It is recorded from a made-up three-draft video: seven stills made with Nano Banana (demo/stills, prompts in demo/prompts) cut into a 20 s drive with slow camera moves, so it can be remade after the page changes. `demo/make_demo_project.sh`
+It is recorded from a made-up three-draft video: Nano Banana stills (demo/stills, prompts in demo/prompts) cut into a 20 s drive with slow camera moves. Drafts 2 and 3 wait in the project's staged/ folder until the recording "delivers" each one after its note. It can be remade after the page changes. `demo/make_demo_project.sh`
 builds the project, `demo/record_demo.mjs` drives the page with Playwright, and `demo/to_gif.sh` makes the GIF. The
 steps are at the top of `record_demo.mjs`.
 

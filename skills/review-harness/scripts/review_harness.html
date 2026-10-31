@@ -53,6 +53,14 @@ button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
 @media (max-width: 900px) { #app { grid-template-columns: 1fr; height: auto; } #right { max-height: 50vh; } #hud { flex-wrap: wrap; } #hud .line { text-align: left; flex-basis: 100%; } }
 #stage { position: relative; }
 #stage:has(#wait.on) { aspect-ratio: 16 / 9; }
+/* before/after: an earlier note's marked frame wiped against this draft at the same moment */
+#cmp { display: none; position: absolute; z-index: 4; cursor: ew-resize; touch-action: none; } #cmp.on { display: block; }
+#cmp img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#cmp .bar { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: #fff; box-shadow: 0 0 10px #000a; pointer-events: none; }
+#cmp .bar::after { content: '◀ ▶'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #111; font: 700 12px system-ui; padding: 6px 7px; border-radius: 14px; white-space: nowrap; }
+#cmp .lab { position: absolute; top: 10px; padding: 4px 10px; border-radius: 4px; font: 700 13px system-ui, sans-serif; letter-spacing: .04em; color: #111; pointer-events: none; }
+#cmp .lb { left: 10px; background: #ffd100; } #cmp .la { right: 10px; background: #3cc8ff; }
+#cmp .x { position: absolute; right: 10px; bottom: 10px; padding: 4px 10px; font-size: 13px; }
 #wait { display: none; position: absolute; inset: 0; background: rgba(12,12,16,.92); align-items: center; justify-content: center; z-index: 5; }
 #wait.on { display: flex; }
 #wait .wbox { width: min(560px, 86%); color: #f4f4f6; font: 15px/1.4 system-ui, "Segoe UI", sans-serif; }
@@ -68,6 +76,7 @@ button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
 <div id="left">
   <div id="pieces"></div>
   <div id="stage"><video id="vid" controls preload="auto"></video><canvas id="mark"></canvas>
+    <div id="cmp" title="drag to wipe between the frame you marked and this draft"><img id="cmpImg" alt=""><div class="bar" id="cmpBar"></div><span class="lab lb" id="cmpB"></span><span class="lab la" id="cmpA"></span><button class="x" id="cmpX">✕ close</button></div>
     <div id="wait"><div class="wbox"><div id="waitTitle"></div><div id="waitBars"></div><div class="wnote">It loads here by itself when it's ready.</div></div></div></div>
   <div id="tl" title="cyan strip: changed in THIS draft · amber→red underneath: how many drafts have changed that spot (hotter = reworked more) · gold dots: this draft's notes · grey: earlier rounds (green fixed, red still broken) · click to jump"><canvas class="heat" id="heat"></canvas><div class="play" id="tlp"></div></div>
   <div id="hud"><span id="heatkey"><b></b>this draft <i></i>changed in <span id="heatn">0</span> earlier drafts</span><span class="f" id="hf">f 0</span><span id="ht">0:00.00</span><span class="shot" id="hs"></span><span class="chgb" id="hc">CHANGED</span><span class="line" id="hl"></span></div>
@@ -76,7 +85,7 @@ button.done { background: #2f5a2a; border-color: #4f8a46; font-weight: 700; }
     <input id="note" placeholder="Type a note for this frame, Enter to save (the video pauses while you type)" autocomplete="off">
     <span id="rectinfo"></span><button id="clear">Clear boxes</button><button id="save">Save</button><button class="done" id="done">Done: send to Claude</button><span id="status"></span>
   </div>
-  <div id="help">Cyan strip = changed in this draft; the amber→red heat under it = how many drafts changed that spot (go where it's hot) (Changes tab lists them; c / Shift+C: next / previous change) · Timeline dots: gold = this draft's notes, grey = earlier rounds still open (red if you mark them still broken); ✓ accept in the Earlier rounds tab removes a note from view for good · Paused: drag on the picture to box what you mean (drag again to add more boxes, right-click a box, Backspace or Clear boxes to remove) · Space: play/pause · ←/→: one frame · Shift+←/→: one second · Enter in the box: save note · Esc: back to the video · click a note to jump to it</div>
+  <div id="help">Cyan strip = changed in this draft; the amber→red heat under it = how many drafts changed that spot (go where it's hot) (Changes tab lists them; c / Shift+C: next / previous change) · Timeline dots: gold = this draft's notes, grey = earlier rounds still open (red if you mark them still broken); click an earlier note to wipe between the frame you marked and this draft; ✓ accept removes it from view for good · Paused: drag on the picture to box what you mean (drag again to add more boxes, right-click a box, Backspace or Clear boxes to remove) · Space: play/pause · ←/→: one frame · Shift+←/→: one second · Enter in the box: save note · Esc: back to the video · click a note to jump to it</div>
 </div>
 <div id="right"><div id="tabs"><button id="tabCur" class="on">This draft</button><button id="tabOld">Earlier rounds</button><button id="tabChg">Changes</button></div><h2 id="count">Notes</h2><ul id="notes"></ul></div>
 </div>
@@ -125,7 +134,23 @@ async function waitFor(d) {
     `<div class="we">${x.done ? 'done, making the review copy' : Math.round(100 * Math.min(1, x.pct)) + '%  ' + (x.pct >= 1 || x.eta < 0 ? 'finishing' : fmtE(x.eta))}</div></div>`).join('');
   waitTimer = setTimeout(() => waitFor(d), 3000);
 }
+// before/after (click an earlier note that has a marked frame): its JPEG laid over the picture, cut at a divider you
+// drag; left of it is the frame as it was when you wrote the note (with your boxes), right of it this draft
+let cmpSplit = .5, cmpDrag = false;
+const cmpSet = f => { cmpSplit = Math.min(1, Math.max(0, f)); $('cmpImg').style.clipPath = `inset(0 ${100 - cmpSplit * 100}% 0 0)`; $('cmpBar').style.left = cmpSplit * 100 + '%'; };
+function compare(n) {
+  const c = $('cmp'), b = vbox(); vid.pause();
+  Object.assign(c.style, { left: b.x + 'px', top: b.y + 'px', width: b.w + 'px', height: b.h + 'px' });
+  $('cmpImg').src = '/' + n.img; $('cmpB').textContent = 'BEFORE · ' + n.draft; $('cmpA').textContent = 'AFTER · ' + draft;
+  cmpSet(.5); c.classList.add('on');
+}
+const uncompare = () => $('cmp').classList.remove('on');
+$('cmp').addEventListener('pointerdown', e => { if (e.target === $('cmpX')) return; cmpDrag = true; $('cmp').setPointerCapture(e.pointerId); const r = $('cmp').getBoundingClientRect(); cmpSet((e.clientX - r.left) / r.width); });
+$('cmp').addEventListener('pointermove', e => { if (!cmpDrag) return; const r = $('cmp').getBoundingClientRect(); cmpSet((e.clientX - r.left) / r.width); });
+$('cmp').addEventListener('pointerup', () => { cmpDrag = false; });
+$('cmpX').onclick = uncompare; vid.addEventListener('play', uncompare);
 async function loadDraft(d) {
+  uncompare();
   draft = d; waitFor(d);   // waitFor loads the video (or shows the progress bar while it renders)
   meta = await (await fetch('/api/meta?draft=' + d)).json();
   await loadChanges(d); await loadNotes();   // (a // comment used to swallow this line: notes looked gone after a reload)
@@ -229,7 +254,7 @@ function renderOld() {   // earlier rounds, newest first: the note, its marked f
     li.innerHTML = `<div class="meta"><span>${n.draft} · ${fmt(n.time)} · ${n.shot || ''}${n.rects ? ` · <b class="box">${n.rects.length}▭</b>` : ''}</span></div><div class="tx"></div>${n.img ? `<img loading="lazy" src="/${n.img}">` : ''}
       <div class="vd"><button class="fx ${n.verdict === 'fixed' ? 'on' : ''}">✓ accept</button><button class="br ${n.verdict === 'broken' ? 'on' : ''}">✗ still broken</button></div>`;
     li.querySelector('.tx').textContent = n.text;
-    li.onclick = e => { if (e.target.tagName === 'BUTTON') return; jump(n); };
+    li.onclick = e => { if (e.target.tagName === 'BUTTON') return; jump(n); if (n.img) compare(n); };
     li.querySelector('.fx').onclick = () => verdict(n, 'fixed'); li.querySelector('.br').onclick = () => verdict(n, 'broken');
     $('notes').appendChild(li);
   }
@@ -251,6 +276,7 @@ $('done').onclick = async () => { try { const r = await (await fetch('/api/done'
   catch (e) { $('status').style.color = '#ff6a50'; $('status').textContent = 'NOT SENT: the review server did not answer.'; } };
 addEventListener('keydown', e => {
   if (e.target === $('note')) return;
+  if (e.key === 'Escape') uncompare();
   if (e.key === ' ') { e.preventDefault(); vid.paused ? vid.play() : vid.pause(); }
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); vid.pause(); vid.currentTime = Math.max(0, vid.currentTime + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / FPS)); }
   if (e.key === 'n') { e.preventDefault(); $('note').focus(); }

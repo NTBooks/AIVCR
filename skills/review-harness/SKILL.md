@@ -76,6 +76,8 @@ When you send the next draft, say which notes it addresses. The user marks them 
 - Timeline: gold dots are this draft's notes, grey are earlier rounds (green fixed, red still broken), the cyan strip
   is this draft's changes, the amber-to-red band is the heatmap. Click anything to jump. `c` / Shift+C hop between changes.
 - Tabs: This draft, Earlier rounds (accept or mark still broken), Changes (click to watch each from 1.5 s before).
+- Click an earlier note that has a marked frame: a **before/after wipe** lays that frame (with its boxes) over this
+  draft at the same moment; drag across to compare, Esc or play to close. Point the user at it when a draft answers a note.
 - Several videos in one project (a main cut, a P.S., Shorts) get one tab each, from the `<piece>-draftN` names.
 
 ## API (for scripts)
