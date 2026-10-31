@@ -7,6 +7,8 @@ Tools for making videos with an AI agent. They keep a person in charge of every 
 on a frame, box what you mean and type a note. Claude reads your notes, marked-up frames included, before it touches
 the next draft.
 
+<p align="center"><img src="assets/demo.gif" alt="The review harness: the change strip and heatmap, boxes on a paused frame (one removed with a right-click), a note, accepting an earlier note, the Changes tab, Done" width="900"></p>
+
 ## The review harness
 
 - **Frame-accurate notes.** The page shows the frame number, time, shot name and the line being sung. Every note saves
@@ -109,6 +111,12 @@ review/notes_draft2.done          you pressed Done
 ```
 
 `rects` are fractions of the frame, measured from the top-left: `{x, y, w, h}`.
+
+## The demo GIF
+
+It's recorded from a made-up three-draft video, so it can be remade after the page changes. `demo/make_demo_project.sh`
+builds the project, `demo/record_demo.mjs` drives the page with Playwright, and `demo/to_gif.sh` makes the GIF. The
+steps are at the top of `record_demo.mjs`.
 
 ## Logo
 
