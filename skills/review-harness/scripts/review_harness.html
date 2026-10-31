@@ -89,7 +89,9 @@ const OFF = () => meta.span?.t0 || 0;
 const shotAt = t => (meta.shots.find(s => t >= s.t0 && t < (s.t1 ?? 1e9)) || {}).name || '';
 const lineAt = t => (meta.lines.find(l => t >= l.t0 - 0.2 && t < l.t1 + 0.6) || {}).text || '';
 const chgAt = t => changes.find(c => t >= c.t0 && t < c.t1);
-function hud(vt) { const t = vt + OFF(); const cg = chgAt(t); $('hc').classList.toggle('on', !!cg); $('hc').textContent = cg ? 'CHANGED' + (cg.label ? ': ' + cg.label : '') : ''; frame = Math.floor(t * FPS + 1e-3); $('hf').textContent = 'f ' + frame; $('ht').textContent = fmt(t) + (OFF() ? ` (clip ${fmt(vt)})` : ''); $('hs').textContent = shotAt(t); $('hl').textContent = lineAt(t); }
+// changes.py labels read "changed: <shots>"; the badge and tooltip already say changed, so show only what changed
+const what = c => (c.label || '').replace(/^changed:?\s*/i, '');
+function hud(vt) { const t = vt + OFF(); const cg = chgAt(t); $('hc').classList.toggle('on', !!cg); $('hc').textContent = cg ? 'CHANGED' + (what(cg) ? ': ' + what(cg) : '') : ''; frame = Math.floor(t * FPS + 1e-3); $('hf').textContent = 'f ' + frame; $('ht').textContent = fmt(t) + (OFF() ? ` (clip ${fmt(vt)})` : ''); $('hs').textContent = shotAt(t); $('hl').textContent = lineAt(t); }
 const tick = (now, md) => { hud(md.mediaTime); vid.requestVideoFrameCallback(tick); };
 if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) vid.requestVideoFrameCallback(tick); else setInterval(() => hud(vid.currentTime), 33);
 vid.addEventListener('seeked', () => hud(vid.currentTime));
@@ -158,7 +160,7 @@ function timeline() {   // every note as a dot on the song's timeline: gold this
       X.fillStyle = `rgba(${rC},${gC},${bC},${al})`; X.fillRect(cv.width * Math.max(0, a) / dur, 9, Math.max(1, cv.width * (Math.min(dur, b) - Math.max(0, a)) / dur + .5), cv.height - 9); }); }
   for (const c of changes) { const a = Math.max(0, c.t0 - OFF()), b = Math.min(dur, c.t1 - OFF()); if (b <= 0 || a >= dur) continue;   // the newest: a cyan strip along the top
     const e = document.createElement('div'); e.className = 'chg'; e.style.left = (100 * a / dur) + '%'; e.style.width = Math.max(0.25, 100 * (b - a) / dur) + '%';
-    e.title = `changed: ${c.label || ''} (${fmt(c.t0)}–${fmt(c.t1)})`; e.onclick = ev => { ev.stopPropagation(); jumpChg(c); }; tl.appendChild(e); }
+    e.title = `changed: ${what(c)} (${fmt(c.t0)}–${fmt(c.t1)})`; e.onclick = ev => { ev.stopPropagation(); jumpChg(c); }; tl.appendChild(e); }
   const add = (n, cls) => { const vt = n.time - OFF(); if (vt < 0 || vt > dur) return; const d = document.createElement('div'); d.className = 'dot ' + cls; d.style.left = (100 * vt / dur) + '%'; d.dataset.k = keyOf(n);
     d.onmouseenter = () => hl(n, true); d.onmouseleave = () => hl(n, false);
     d.title = `${n.draft || draft} · ${fmt(n.time)} · ${n.text}`; d.onclick = e => { e.stopPropagation(); jump(n); }; tl.appendChild(d); };
