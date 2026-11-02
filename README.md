@@ -128,6 +128,8 @@ review/notes_draft2.done          you pressed Done
 
 ## Add-on: the slop-o-meter
 
+<p align="center"><img src="assets/slop-o-meter/card.gif" alt="The slop-o-meter card: a brass gauge on a cabin wall; a ship's log types out nine AI uses one by one, each kicking the needle higher and rolling the odometer, until it reads 62.5 and CERTIFIED SLOP is stamped across the gauge" width="860"></p>
+
 `skills/slop-o-meter` is a second skill: an AI-use disclosure card for the top of a video. A brass ship's gauge
 whose log types out where AI was used, one line per use, each kicking the needle up by its points. The score is out of
 100, meaning all the AI the work could have used: AI writing, direction, generated video and generated music weigh 15
@@ -139,7 +141,9 @@ description.
 cp -r AIVCR/skills/slop-o-meter ~/.claude/skills/ && cd ~/.claude/skills/slop-o-meter && npm install && npx playwright install chromium
 ```
 
-Then ask Claude Code for "a slop-o-meter for this video".
+Then ask Claude Code for "a slop-o-meter for this video". The card ends on its verdict:
+
+<p align="center"><img src="assets/slop-o-meter/card-final.png" alt="The final frame: nine logged AI uses with their points, NONE: AI video, BY HAND: the idea, the brief, every note, picking the take, and the gauge at 62.5 stamped CERTIFIED SLOP" width="860"></p>
 
 **The web generator** is in `skills/slop-o-meter/generator`: the same card made in the browser, with a share link,
 .mp4, .html, .png and .webm downloads. It's the code behind [slopscore.org/slop-o-meter](https://slopscore.org/slop-o-meter/),
@@ -150,6 +154,11 @@ cd AIVCR/skills/slop-o-meter && node generator/build.mjs && python -m http.serve
 ```
 
 Open http://localhost:5199/generator/. Edit `generator/form.mjs` or `rubric.json`, then rebuild `generator/index.html`.
+
+<p align="center"><img src="assets/slop-o-meter/generator.png" alt="The web generator: each category has none / a touch / half / mostly / all AI buttons and a line of text; the live card beside the form shows 62.5, Certified Slop, with Share and Download video buttons" width="860"></p>
+
+The pictures above come from `bash demo/slop-o-meter/make.sh` (it renders the example log, makes the GIF and takes the
+screenshot), so they can be remade after the card or the page changes.
 
 ## The demo GIF
 
