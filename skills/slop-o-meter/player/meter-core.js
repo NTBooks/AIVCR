@@ -21,11 +21,31 @@
   const back = x => { x = clamp(x); const s = 1.7; return 1 + (s + 1) * Math.pow(x - 1, 3) + s * Math.pow(x - 1, 2); };
   const fmt = p => (Math.abs(p - Math.round(p)) < 1e-6 ? String(Math.round(p)) : p.toFixed(1));
 
+  /** The rubric for one manifest's kind of work (rubric.kinds; M.kind, default the first kind, "video"): its categories,
+   *  plus those of any extras it ticked (M.extras), minus any it marked "doesn't apply" (M.na; never a kind's core
+   *  one), with the weights scaled so they total 100. Video's weights are the base ones, so a manifest with no kind
+   *  scores as it always did. A rubric without kinds, or one already worked out (it has .kind), comes back as it is. */
+  function rubricFor(rubric, M = {}) {
+    if (!rubric.kinds || rubric.kind) return rubric;
+    const k = rubric.kinds.find(x => x.id === M.kind) || rubric.kinds[0];
+    const base = Object.fromEntries(rubric.categories.map(c => [c.id, c]));
+    let list = k.cats.slice();
+    for (const e of k.extras || []) if ((M.extras || []).includes(e.id)) list = list.concat(e.cats);
+    list = list.filter(o => o.core || !(M.na || []).includes(o.id));
+    const total = list.reduce((s, o) => s + o.weight, 0);
+    const categories = list.map(o => { const c = base[o.id], a = c.ask || {}, b = o.ask || {};
+      return { ...c, weight: o.weight * 100 / total, raw: o.weight, core: !!o.core, label: o.label || c.label, short: o.short || c.short,
+        ask: { q: b.q || a.q, sub: b.sub || a.sub, options: b.options || a.options } }; });
+    const skipped = rubric.categories.map(c => c.id).filter(id => !categories.some(c => c.id === id));
+    return { ...rubric, kind: k, categories, skipped };
+  }
+
   /** Score a manifest without drawing it: rows (biggest first unless order:"manifest"), score, verdict, what went unused. */
   function score(M, rubric) {
+    rubric = rubricFor(rubric, M);
     const cats = Object.fromEntries(rubric.categories.map(c => [c.id, c]));
-    for (const u of M.uses) if (!cats[u.cat]) throw new Error('unknown category ' + u.cat);
-    const rows = M.uses.filter(u => u.level > 0).map(u => ({ ...u, c: cats[u.cat], pts: cats[u.cat].weight * u.level }));
+    for (const u of M.uses) if (!cats[u.cat] && !(rubric.skipped || []).includes(u.cat)) throw new Error('unknown category ' + u.cat);
+    const rows = M.uses.filter(u => u.level > 0 && cats[u.cat]).map(u => ({ ...u, c: cats[u.cat], pts: cats[u.cat].weight * u.level }));
     if (M.order !== 'manifest') rows.sort((a, b) => b.pts - a.pts || a.c.tier - b.c.tier);
     const used = new Set(rows.map(r => r.cat));
     const unused = rubric.categories.filter(c => !used.has(c.id) && c.tier <= (M.noneTier || 2));
@@ -301,5 +321,5 @@
     return p;
   }
 
-  root.SlopMeter = { create, player, score, Sound, fmt };
+  root.SlopMeter = { create, player, score, rubricFor, Sound, fmt };
 })(typeof window !== 'undefined' ? window : this);

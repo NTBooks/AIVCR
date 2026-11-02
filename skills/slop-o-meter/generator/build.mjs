@@ -11,8 +11,8 @@ const rubric = JSON.parse(readFileSync(path.join(HERE, '..', 'rubric.json'), 'ut
 const body = generatorBody({ rubric, paths: { rubric: '../rubric.json', core: '../player/meter-core.js', mp4: './mp4-export.mjs' } });
 writeFileSync(path.join(HERE, 'index.html'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Make a slop-o-meter</title>
-<meta name="description" content="Log where AI went in your video, song, game or app, get a score out of 100 and an animated brass gauge to download.">
+<title>Slop-o-meter</title>
+<meta name="description" content="How much AI went into your video, song, writing, image or code? Answer a few questions, get a score out of 100 and an animated brass gauge to share or download.">
 <link rel="stylesheet" href="generator.css">
 </head><body>
 <!-- built by generator/build.mjs from form.mjs and ../rubric.json: edit those, not this file -->
