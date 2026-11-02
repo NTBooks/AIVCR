@@ -1,0 +1,16 @@
+{
+  "title": "One-Shot Dummy",
+  "byline": "a sloptrawler music video",
+  "uses": [
+    { "cat": "audio",     "level": 1,    "text": "Song and vocals made in Suno v6 (take 12 of 12)" },
+    { "cat": "writing",   "level": 0.5,  "text": "Lyrics written with Claude from my brief and edits" },
+    { "cat": "direction", "level": 0.5,  "text": "Claude built the shots; I gave the notes, 7 rounds" },
+    { "cat": "images",    "level": 1,    "text": "Cast, photos and sprite sheets by Gemini (~$12)" },
+    { "cat": "code",      "level": 1,    "text": "Engine, crash physics and camera coded by Claude" },
+    { "cat": "helpers",   "level": 1,    "text": "Depth maps and masks made locally" },
+    { "cat": "mograph",   "level": 1,    "text": "Sticker lyrics timed with whisper" },
+    { "cat": "research",  "level": 0.5,  "text": "Haiku judges scored the drafts" },
+    { "cat": "cleanup",   "level": 1,    "text": "Stems split for the drummer's beat tracking" }
+  ],
+  "human": ["the idea", "the brief", "every note", "picking the take"]
+}

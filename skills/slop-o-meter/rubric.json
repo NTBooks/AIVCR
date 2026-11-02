@@ -1,0 +1,134 @@
+{
+  "_note": "Weights sum to 100: the most AI a video could use. A video's score is the sum of weight x level over the categories it used. Tier 1 is the big four (AI wrote it, directed it, generated the picture, generated the sound); mastering is the least.",
+  "levels": {
+    "0": "none",
+    "0.25": "a touch",
+    "0.5": "half",
+    "0.75": "mostly",
+    "1": "all AI"
+  },
+  "categories": [
+    {
+      "id": "writing",
+      "tier": 1,
+      "weight": 15,
+      "label": "Lyrics & script",
+      "short": "AI lyrics",
+      "hint": "who wrote the words: you alone 0, your words with AI tidy-ups 0.25, written with an AI from your brief 0.5, an AI drafting from a one-line idea 0.75, AI unprompted 1"
+    },
+    {
+      "id": "direction",
+      "tier": 1,
+      "weight": 15,
+      "label": "Direction & edit",
+      "short": "AI direction",
+      "hint": "treatment, staging, shot choice, the cut: an AI builds it from your notes 0.5, you only approve 0.75-1"
+    },
+    {
+      "id": "video",
+      "tier": 1,
+      "weight": 15,
+      "label": "Generated video",
+      "short": "AI video",
+      "hint": "text/image-to-video models (Veo, Sora, Kling, Runway) or AI restyles of footage; code-rendered animation is NOT this"
+    },
+    {
+      "id": "audio",
+      "tier": 1,
+      "weight": 15,
+      "label": "Generated music & vocals",
+      "short": "AI music",
+      "hint": "a song or voices generated whole (Suno, Udio) is 1; your own recorded voice, instrument or demo lowers it"
+    },
+    {
+      "id": "images",
+      "tier": 2,
+      "weight": 10,
+      "label": "Generated images",
+      "short": "AI images",
+      "hint": "generated stills, plates, cast sheets, sprite sheets, thumbnails; real photos and hand-made art are not"
+    },
+    {
+      "id": "code",
+      "tier": 2,
+      "weight": 8,
+      "label": "Animation & render code",
+      "short": "AI code",
+      "hint": "the engine, rigs, camera, physics and shaders written by an AI"
+    },
+    {
+      "id": "helpers",
+      "tier": 3,
+      "weight": 5,
+      "label": "Tracking, masks & depth",
+      "short": "AI depth/masks",
+      "hint": "AI models that read or touch up your footage: face/hand tracking, depth maps, masks, background removal, optical flow, upscaling"
+    },
+    {
+      "id": "mograph",
+      "tier": 3,
+      "weight": 5,
+      "label": "Motion graphics & lyrics",
+      "short": "AI graphics",
+      "hint": "karaoke, cards, titles, lyric timing from whisper"
+    },
+    {
+      "id": "sfx",
+      "tier": 3,
+      "weight": 4,
+      "label": "Sound effects & foley",
+      "short": "AI sfx",
+      "hint": "synthesised or generated foley, whooshes, stingers"
+    },
+    {
+      "id": "research",
+      "tier": 3,
+      "weight": 3,
+      "label": "Research & critique",
+      "short": "AI research",
+      "hint": "fact-checks, reference hunting, Haiku judges, persona reviewers"
+    },
+    {
+      "id": "cleanup",
+      "tier": 4,
+      "weight": 3,
+      "label": "Audio cleanup & stems",
+      "short": "AI cleanup",
+      "hint": "demucs stems, de-noise, patching a dropout, splicing takes"
+    },
+    {
+      "id": "mastering",
+      "tier": 4,
+      "weight": 2,
+      "label": "Audio mastering",
+      "short": "AI mastering",
+      "hint": "loudness levelling, EQ/compression, AI mastering services"
+    }
+  ],
+  "verdicts": [
+    {
+      "min": 0,
+      "text": "HAND-RAISED"
+    },
+    {
+      "min": 10,
+      "text": "A PINCH OF SLOP"
+    },
+    {
+      "min": 30,
+      "text": "SLOP-ADJACENT"
+    },
+    {
+      "min": 50,
+      "text": "CERTIFIED SLOP"
+    },
+    {
+      "min": 70,
+      "text": "PRIME SLOP"
+    },
+    {
+      "min": 90,
+      "text": "PURE TROUGH"
+    }
+  ]
+}

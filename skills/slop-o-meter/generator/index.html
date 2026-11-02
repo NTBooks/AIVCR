@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make a slop-o-meter</title>
+<meta name="description" content="Log where AI went in your video, song, game or app, get a score out of 100 and an animated brass gauge to download.">
+<link rel="stylesheet" href="generator.css">
+</head><body>
+<!-- built by generator/build.mjs from form.mjs and ../rubric.json: edit those, not this file -->
+<main>
+<section class="wrap page-head"><p class="kicker">free, no sign-up, nothing leaves your browser</p><h1>Make a slop-o-meter</h1>
+<p class="lede">Log where the AI went in your video, song, game or app. Each line kicks the needle by its points; the score is out of 100, all the AI it could have used. Then share it: a link that shows the meter and sends people on to your work, or a video for your intro.</p></section>
+<section class="wrap gen-shared" hidden><div class="panel"><p class="small">Somebody shared a slop-o-meter with you</p><h2></h2><p class="gen-shared-score"></p>
+<p class="cta"><a class="btn gen-shared-go" rel="noopener nofollow ugc" target="_blank" hidden>Go to the work</a> <a class="btn ghost" href="#gen-form">Make your own</a></p></div></section>
+<section class="wrap gen">
+  <form class="gen-form" id="gen-form" autocomplete="off" data-rubric="../rubric.json" data-core="../player/meter-core.js" data-mp4="./mp4-export.mjs">
+    <div class="g-top"><label>Title <input name="title" maxlength="40" value="My Video"></label>
+    <label>Byline <input name="byline" maxlength="40" value="a music video"></label>
+    <label class="g-url">Link to the work <small>(optional: where people can see it)</small><input name="url" type="url" maxlength="300" placeholder="https://youtu.be/... or your project's page" inputmode="url"></label></div>
+    <fieldset class="g-rows"><legend>Where the AI went</legend>
+    <div class="g-row" data-cat="writing"><div class="g-name"><b>Lyrics &amp; script</b><small>up to 15 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Lyrics &amp; script"><label><input type="radio" name="lv-writing" value="0" checked><span>none</span></label><label><input type="radio" name="lv-writing" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-writing" value="0.5"><span>half</span></label><label><input type="radio" name="lv-writing" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-writing" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">who wrote the words: you alone 0, your words with AI tidy-ups 0.25, written with an AI from your brief 0.5, an AI drafting from a one-line idea 0.75, AI unprompted 1</p>
+      <input class="g-text" name="tx-writing" maxlength="52" placeholder="who wrote the words"></div><div class="g-row" data-cat="direction"><div class="g-name"><b>Direction &amp; edit</b><small>up to 15 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Direction &amp; edit"><label><input type="radio" name="lv-direction" value="0" checked><span>none</span></label><label><input type="radio" name="lv-direction" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-direction" value="0.5"><span>half</span></label><label><input type="radio" name="lv-direction" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-direction" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">treatment, staging, shot choice, the cut: an AI builds it from your notes 0.5, you only approve 0.75-1</p>
+      <input class="g-text" name="tx-direction" maxlength="52" placeholder="treatment, staging, shot choice, the cut"></div><div class="g-row" data-cat="video"><div class="g-name"><b>Generated video</b><small>up to 15 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Generated video"><label><input type="radio" name="lv-video" value="0" checked><span>none</span></label><label><input type="radio" name="lv-video" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-video" value="0.5"><span>half</span></label><label><input type="radio" name="lv-video" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-video" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">text/image-to-video models (Veo, Sora, Kling, Runway) or AI restyles of footage; code-rendered animation is NOT this</p>
+      <input class="g-text" name="tx-video" maxlength="52" placeholder="text/image-to-video models (Veo, Sora, Kling, Runway"></div><div class="g-row" data-cat="audio"><div class="g-name"><b>Generated music &amp; vocals</b><small>up to 15 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Generated music &amp; vocals"><label><input type="radio" name="lv-audio" value="0" checked><span>none</span></label><label><input type="radio" name="lv-audio" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-audio" value="0.5"><span>half</span></label><label><input type="radio" name="lv-audio" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-audio" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">a song or voices generated whole (Suno, Udio) is 1; your own recorded voice, instrument or demo lowers it</p>
+      <input class="g-text" name="tx-audio" maxlength="52" placeholder="a song or voices generated whole (Suno, Udio) is 1; "></div><div class="g-row" data-cat="images"><div class="g-name"><b>Generated images</b><small>up to 10 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Generated images"><label><input type="radio" name="lv-images" value="0" checked><span>none</span></label><label><input type="radio" name="lv-images" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-images" value="0.5"><span>half</span></label><label><input type="radio" name="lv-images" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-images" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">generated stills, plates, cast sheets, sprite sheets, thumbnails; real photos and hand-made art are not</p>
+      <input class="g-text" name="tx-images" maxlength="52" placeholder="generated stills, plates, cast sheets, sprite sheets"></div><div class="g-row" data-cat="code"><div class="g-name"><b>Animation &amp; render code</b><small>up to 8 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Animation &amp; render code"><label><input type="radio" name="lv-code" value="0" checked><span>none</span></label><label><input type="radio" name="lv-code" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-code" value="0.5"><span>half</span></label><label><input type="radio" name="lv-code" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-code" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">the engine, rigs, camera, physics and shaders written by an AI</p>
+      <input class="g-text" name="tx-code" maxlength="52" placeholder="the engine, rigs, camera, physics and shaders writte"></div><div class="g-row" data-cat="helpers"><div class="g-name"><b>Tracking, masks &amp; depth</b><small>up to 5 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Tracking, masks &amp; depth"><label><input type="radio" name="lv-helpers" value="0" checked><span>none</span></label><label><input type="radio" name="lv-helpers" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-helpers" value="0.5"><span>half</span></label><label><input type="radio" name="lv-helpers" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-helpers" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">AI models that read or touch up your footage: face/hand tracking, depth maps, masks, background removal, optical flow, upscaling</p>
+      <input class="g-text" name="tx-helpers" maxlength="52" placeholder="AI models that read or touch up your footage"></div><div class="g-row" data-cat="mograph"><div class="g-name"><b>Motion graphics &amp; lyrics</b><small>up to 5 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Motion graphics &amp; lyrics"><label><input type="radio" name="lv-mograph" value="0" checked><span>none</span></label><label><input type="radio" name="lv-mograph" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-mograph" value="0.5"><span>half</span></label><label><input type="radio" name="lv-mograph" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-mograph" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">karaoke, cards, titles, lyric timing from whisper</p>
+      <input class="g-text" name="tx-mograph" maxlength="52" placeholder="karaoke, cards, titles, lyric timing from whisper"></div><div class="g-row" data-cat="sfx"><div class="g-name"><b>Sound effects &amp; foley</b><small>up to 4 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Sound effects &amp; foley"><label><input type="radio" name="lv-sfx" value="0" checked><span>none</span></label><label><input type="radio" name="lv-sfx" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-sfx" value="0.5"><span>half</span></label><label><input type="radio" name="lv-sfx" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-sfx" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">synthesised or generated foley, whooshes, stingers</p>
+      <input class="g-text" name="tx-sfx" maxlength="52" placeholder="synthesised or generated foley, whooshes, stingers"></div><div class="g-row" data-cat="research"><div class="g-name"><b>Research &amp; critique</b><small>up to 3 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Research &amp; critique"><label><input type="radio" name="lv-research" value="0" checked><span>none</span></label><label><input type="radio" name="lv-research" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-research" value="0.5"><span>half</span></label><label><input type="radio" name="lv-research" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-research" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">fact-checks, reference hunting, Haiku judges, persona reviewers</p>
+      <input class="g-text" name="tx-research" maxlength="52" placeholder="fact-checks, reference hunting, Haiku judges, person"></div><div class="g-row" data-cat="cleanup"><div class="g-name"><b>Audio cleanup &amp; stems</b><small>up to 3 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Audio cleanup &amp; stems"><label><input type="radio" name="lv-cleanup" value="0" checked><span>none</span></label><label><input type="radio" name="lv-cleanup" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-cleanup" value="0.5"><span>half</span></label><label><input type="radio" name="lv-cleanup" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-cleanup" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">demucs stems, de-noise, patching a dropout, splicing takes</p>
+      <input class="g-text" name="tx-cleanup" maxlength="52" placeholder="demucs stems, de-noise, patching a dropout, splicing"></div><div class="g-row" data-cat="mastering"><div class="g-name"><b>Audio mastering</b><small>up to 2 pts</small></div>
+      <div class="g-level" role="radiogroup" aria-label="Audio mastering"><label><input type="radio" name="lv-mastering" value="0" checked><span>none</span></label><label><input type="radio" name="lv-mastering" value="0.25"><span>a touch</span></label><label><input type="radio" name="lv-mastering" value="0.5"><span>half</span></label><label><input type="radio" name="lv-mastering" value="0.75"><span>mostly</span></label><label><input type="radio" name="lv-mastering" value="1"><span>all AI</span></label></div>
+      <p class="g-hint">loudness levelling, EQ/compression, AI mastering services</p>
+      <input class="g-text" name="tx-mastering" maxlength="52" placeholder="loudness levelling, EQ/compression, AI mastering ser"></div>
+    </fieldset>
+    <label class="g-hand">By hand <small>(comma-separated: what people did)</small><input name="human" maxlength="160" value="the idea, every note"></label>
+  </form>
+  <div class="gen-out">
+    <div class="meter-box"><canvas class="meter gen-canvas" aria-label="Your slop-o-meter, live"></canvas>
+    <div class="meter-ui"><button class="m-play" type="button">Play</button><input class="m-scrub" type="range" min="0" max="1000" value="1000" aria-label="Scrub"><label class="m-snd"><input type="checkbox" checked> sound</label></div></div>
+    <p class="gen-score"></p>
+    <div class="gen-actions">
+      <button class="btn" data-act="share" type="button">Share</button>
+      <button class="btn ghost" data-act="mp4" type="button">Download video (.mp4)</button>
+    </div>
+    <p class="small gen-status" role="status"></p>
+  </div>
+  <dialog class="share-dlg" aria-labelledby="share-h">
+    <div class="share-head"><h2 id="share-h">Share your slop-o-meter</h2><button class="share-x" type="button" data-act="close" aria-label="Close">&times;</button></div>
+    <p class="small">The link plays your meter, then points people to your work. Everything's in the link itself; nothing is stored on our side.</p>
+    <div class="share-link"><input class="share-url" readonly aria-label="Link to your slop-o-meter"><button class="btn" data-act="link" type="button">Copy link</button></div>
+    <div class="share-to">
+      <button class="share-native" data-act="native" type="button" hidden>Share&hellip;</button>
+      <a data-to="x" target="_blank" rel="noopener">X</a><a data-to="bsky" target="_blank" rel="noopener">Bluesky</a><a data-to="reddit" target="_blank" rel="noopener">Reddit</a>
+      <a data-to="facebook" target="_blank" rel="noopener">Facebook</a><a data-to="linkedin" target="_blank" rel="noopener">LinkedIn</a><a data-to="email">Email</a>
+    </div>
+    <h3>Download</h3>
+    <div class="share-grid">
+      <button data-act="mp4" type="button"><b>Video</b><small>.mp4 with sound, for an intro</small></button>
+      <button data-act="html" type="button"><b>Animation</b><small>.html, plays offline, for a web page</small></button>
+      <button data-act="png" type="button"><b>Image</b><small>.png of the final frame</small></button>
+      <button data-act="webm" type="button"><b>Recording</b><small>.webm, recorded in real time</small></button>
+    </div>
+    <h3>Copy</h3>
+    <div class="share-grid">
+      <button data-act="desc" type="button"><b>Description text</b><small>"where the AI went", for YouTube or a post</small></button>
+      <button data-act="json" type="button"><b>JSON</b><small>for the slop-o-meter skill</small></button>
+    </div>
+    <p class="small gen-status" role="status"></p>
+  </dialog>
+</section>
+<section class="wrap how" id="how"><h2>How the score works</h2>
+<p>The most AI a piece of work can use is: AI wrote it, AI directed it, AI generated the picture, AI generated the sound. Those four weigh 15 each. Generated images and code come next, then the helpers (tracking, masks and depth maps, motion graphics, sound effects, research), and audio cleanup and mastering weigh least. Each use gets a level: a touch, half, mostly or all AI. Points are weight times level; the score is the sum.</p>
+<table class="rubric"><thead><tr><th>Category</th><th>Weight</th><th>What counts</th></tr></thead><tbody><tr><td>Lyrics &amp; script</td><td>15</td><td>who wrote the words: you alone 0, your words with AI tidy-ups 0.25, written with an AI from your brief 0.5, an AI drafting from a one-line idea 0.75, AI unprompted 1</td></tr><tr><td>Direction &amp; edit</td><td>15</td><td>treatment, staging, shot choice, the cut: an AI builds it from your notes 0.5, you only approve 0.75-1</td></tr><tr><td>Generated video</td><td>15</td><td>text/image-to-video models (Veo, Sora, Kling, Runway) or AI restyles of footage; code-rendered animation is NOT this</td></tr><tr><td>Generated music &amp; vocals</td><td>15</td><td>a song or voices generated whole (Suno, Udio) is 1; your own recorded voice, instrument or demo lowers it</td></tr><tr><td>Generated images</td><td>10</td><td>generated stills, plates, cast sheets, sprite sheets, thumbnails; real photos and hand-made art are not</td></tr><tr><td>Animation &amp; render code</td><td>8</td><td>the engine, rigs, camera, physics and shaders written by an AI</td></tr><tr><td>Tracking, masks &amp; depth</td><td>5</td><td>AI models that read or touch up your footage: face/hand tracking, depth maps, masks, background removal, optical flow, upscaling</td></tr><tr><td>Motion graphics &amp; lyrics</td><td>5</td><td>karaoke, cards, titles, lyric timing from whisper</td></tr><tr><td>Sound effects &amp; foley</td><td>4</td><td>synthesised or generated foley, whooshes, stingers</td></tr><tr><td>Research &amp; critique</td><td>3</td><td>fact-checks, reference hunting, Haiku judges, persona reviewers</td></tr><tr><td>Audio cleanup &amp; stems</td><td>3</td><td>demucs stems, de-noise, patching a dropout, splicing takes</td></tr><tr><td>Audio mastering</td><td>2</td><td>loudness levelling, EQ/compression, AI mastering services</td></tr></tbody></table>
+<p>Verdicts: <span class="verdict-tag" style="--z:#6fae8c">0+ HAND-RAISED</span> <span class="verdict-tag" style="--z:#a9c26a">10+ A PINCH OF SLOP</span> <span class="verdict-tag" style="--z:#e2c06a">30+ SLOP-ADJACENT</span> <span class="verdict-tag" style="--z:#e8669a">50+ CERTIFIED SLOP</span> <span class="verdict-tag" style="--z:#cc3f79">70+ PRIME SLOP</span> <span class="verdict-tag" style="--z:#8a5a30">90+ PURE TROUGH</span></p>
+<p>Scale every level by how much of the finished piece that use covers. Overlays on a talk that's mostly your face don't make the talk mostly AI.</p></section>
+</main>
+<p class="wrap foot">The slop-o-meter, from <a href="https://github.com/NTBooks/AIVCR">AIVCR</a>. Also at <a href="https://slopscore.org/slop-o-meter/">slopscore.org</a>.</p>
+<script src="../player/meter-core.js"></script>
+<script src="generator.js"></script>
+</body></html>

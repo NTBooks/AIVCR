@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Slop-o-meter</title>
+<style>
+  html, body { margin: 0; background: #120b08; color: #fdf6f7; font: 14px ui-monospace, Consolas, monospace; }
+  canvas { display: block; width: 100%; max-width: 1920px; aspect-ratio: 16 / 9; margin: 0 auto; }
+  #ui { display: flex; gap: 12px; align-items: center; max-width: 1920px; margin: 8px auto; padding: 0 12px; box-sizing: border-box; }
+  #ui input[type=range] { flex: 1; }
+  body.render #ui { display: none; }
+  body.render canvas { width: 1920px; height: 1080px; max-width: none; }
+</style></head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="ui"><button id="play">play</button><input id="scrub" type="range" min="0" max="1000" value="0"><span id="time">0.00 s</span><label><input id="snd" type="checkbox" checked> sound</label></div>
+<script src="meter-core.js"></script>
+<script>
+// The card for render.mjs and for scrubbing by hand. Manifest: window.SLOP (render.mjs sets it) or ?m=<path from the
+// skill folder>. Exposes renderAt(t), DURATION, EVENTS (for sfx.py), SCORE, VERDICT, ROWS and __ready.
+(async () => {
+  const qs = new URLSearchParams(location.search);
+  if (qs.has('render')) document.body.classList.add('render');
+  try {
+    const rubric = await (await fetch('../rubric.json')).json();
+    const M = window.SLOP || await (await fetch('../' + (qs.get('m') || 'examples/example.json'))).json();
+    const m = SlopMeter.create(document.getElementById('c'), M, rubric);
+    Object.assign(window, { renderAt: m.renderAt, DURATION: m.DURATION, EVENTS: m.EVENTS, SCORE: m.SCORE, VERDICT: m.VERDICT, ROWS: m.ROWS });
+    window.__ready = true;
+    if (qs.has('render')) return;
+    const p = SlopMeter.player(m, { sound: true }), sc = document.getElementById('scrub'), tm = document.getElementById('time'), snd = document.getElementById('snd');
+    document.getElementById('play').onclick = () => { p.setSound(snd.checked); p.toggle(); };
+    snd.onchange = () => p.setSound(snd.checked);
+    sc.oninput = () => { p.pause(); p.seek(sc.value / 1000 * m.DURATION); };
+    p.onTick(t => { tm.textContent = t.toFixed(2) + ' s'; sc.value = Math.round(t / m.DURATION * 1000); });
+  } catch (e) { console.error(e); window.__failed = String(e.message || e); }
+})();
+</script>
+</body></html>

@@ -126,6 +126,31 @@ review/notes_draft2.done          you pressed Done
 
 `rects` are fractions of the frame, measured from the top-left: `{x, y, w, h}`.
 
+## Add-on: the slop-o-meter
+
+`skills/slop-o-meter` is a second skill: an AI-use disclosure card for the top of a video. A brass ship's gauge
+whose log types out where AI was used, one line per use, each kicking the needle up by its points. The score is out of
+100, meaning all the AI the work could have used: AI writing, direction, generated video and generated music weigh 15
+each, mastering weighs 2 (`rubric.json` has the table). Claude asks you what you did before the AI got involved, reads
+the project for the rest, and renders a 1080p mp4 with synthesised sound plus a "where the AI went" block for the
+description.
+
+```bash
+cp -r AIVCR/skills/slop-o-meter ~/.claude/skills/ && cd ~/.claude/skills/slop-o-meter && npm install && npx playwright install chromium
+```
+
+Then ask Claude Code for "a slop-o-meter for this video".
+
+**The web generator** is in `skills/slop-o-meter/generator`: the same card made in the browser, with a share link,
+.mp4, .html, .png and .webm downloads. It's the code behind [slopscore.org/slop-o-meter](https://slopscore.org/slop-o-meter/),
+which builds from this folder. To run it locally:
+
+```bash
+cd AIVCR/skills/slop-o-meter && node generator/build.mjs && python -m http.server 5199
+```
+
+Open http://localhost:5199/generator/. Edit `generator/form.mjs` or `rubric.json`, then rebuild `generator/index.html`.
+
 ## The demo GIF
 
 It is recorded from a made-up three-draft video: Nano Banana stills (demo/stills, prompts in demo/prompts) cut into a 20 s drive with slow camera moves. Drafts 2 and 3 wait in the project's staged/ folder until the recording "delivers" each one after its note. It can be remade after the page changes. `demo/make_demo_project.sh`
