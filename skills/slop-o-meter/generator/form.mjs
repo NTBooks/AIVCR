@@ -1,4 +1,5 @@
-// The slop-o-meter generator's page body, built from the rubric. Used by build.mjs here (the standalone index.html) and by
+// The slop-o-meter generator's page body: a one-question-at-a-time check whose questions generator.js builds from the
+// rubric, a reveal, and the share dialog. Used by build.mjs here (the standalone index.html) and by
 // any site that hosts the generator (slopscore.org imports it). The page also needs generator.css (or the site's own
 // styles), player/meter-core.js and generator.js, in that order, after this markup.
 //
@@ -7,33 +8,61 @@
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const ZONES = ['#6fae8c', '#a9c26a', '#e2c06a', '#e8669a', '#cc3f79', '#8a5a30'];
 
-export function generatorBody({ rubric, paths }) {
-  return `<section class="wrap page-head"><p class="kicker">free, no sign-up, nothing leaves your browser</p><h1>Make a slop-o-meter</h1>
-<p class="lede">Log where the AI went in your video, song, game or app. Each line kicks the needle by its points; the score is out of 100, all the AI it could have used. Then share it: a link that shows the meter and sends people on to your work, or a video for your intro.</p></section>
-<section class="wrap gen-shared" hidden><div class="panel"><p class="small">Somebody shared a slop-o-meter with you</p><h2></h2><p class="gen-shared-score"></p>
-<p class="cta"><a class="btn gen-shared-go" rel="noopener nofollow ugc" target="_blank" hidden>Go to the work</a> <a class="btn ghost" href="#gen-form">Make your own</a></p></div></section>
-<section class="wrap gen">
-  <form class="gen-form" id="gen-form" autocomplete="off" data-rubric="${esc(paths.rubric)}" data-core="${esc(paths.core)}" data-mp4="${esc(paths.mp4)}"${paths.slops ? ` data-slops="${esc(paths.slops)}"` : ''}>
-    <div class="g-top"><label>Title <input name="title" maxlength="40" value="My Video"></label>
-    <label>Byline <input name="byline" maxlength="40" value="a music video"></label>
-    <label class="g-url">Link to the work <small>(optional: where people can see it)</small><input name="url" type="url" maxlength="300" placeholder="https://youtu.be/... or your project's page" inputmode="url"></label></div>
-    <fieldset class="g-rows"><legend>Where the AI went</legend>
-    ${rubric.categories.map(c => `<div class="g-row" data-cat="${c.id}"><div class="g-name"><b>${esc(c.label)}</b><small>up to ${c.weight} pts</small></div>
-      <div class="g-level" role="radiogroup" aria-label="${esc(c.label)}">${Object.entries(rubric.levels).sort((a, b) => a[0] - b[0]).map(([k, l]) => `<label><input type="radio" name="lv-${c.id}" value="${k}"${k === '0' ? ' checked' : ''}><span>${esc(l)}</span></label>`).join('')}</div>
-      <p class="g-hint">${esc(c.hint)}</p>
-      <input class="g-text" name="tx-${c.id}" maxlength="52" placeholder="${esc(c.hint.split(':')[0].slice(0, 52))}"></div>`).join('')}
-    </fieldset>
-    <label class="g-hand">By hand <small>(comma-separated: what people did)</small><input name="human" maxlength="160" value="the idea, every note"></label>
+export function generatorBody({ rubric, paths }) {   // rubric: unused now (generator.js reads it), kept so callers don't change
+  return `<section class="wrap page-head"><p class="kicker page-kicker" hidden>Shared with you</p><h1>Slop-o-meter</h1>
+<p class="lede">How much AI went into your video, song, writing, image or code? Answer a few questions and find out.</p></section>
+<section class="wrap gen gen-wiz">
+  <form class="gen-form wiz" id="gen-form" autocomplete="off" novalidate data-rubric="${esc(paths.rubric)}" data-core="${esc(paths.core)}" data-mp4="${esc(paths.mp4)}"${paths.slops ? ` data-slops="${esc(paths.slops)}"` : ''}>
+    <div class="wiz-progress" aria-hidden="true"><span></span></div>
+    <p class="wiz-count"></p>
+    <div class="wiz-step" data-step="kind">
+      <h2>What are you checking?</h2>
+      <div class="wiz-kinds" role="radiogroup" aria-label="What are you checking?"></div>
+      <div class="wiz-extras" hidden><p class="wiz-sub">Does it also have…</p></div>
+    </div>
+    <div class="wiz-step" data-step="about" hidden>
+      <h2>What's it called?</h2>
+      <div class="g-top"><label>Title <input name="title" maxlength="40" placeholder="Untitled video"></label>
+      <label>Byline <input name="byline" maxlength="40" placeholder="a video"></label>
+      <label class="g-url">Link to the work <small>(optional: where people can see it)</small><input name="url" type="url" maxlength="300" placeholder="https://youtu.be/... or your project's page" inputmode="url"></label></div>
+    </div>
+    <div class="wiz-step wiz-q" data-step="q" hidden>
+      <h2 class="wiz-q-h"></h2>
+      <p class="wiz-sub wiz-q-sub"></p>
+      <div class="wiz-opts" role="radiogroup"></div>
+      <label class="wiz-note" hidden>On your card <small>(change it to say it your way)</small><input name="note" maxlength="52"></label>
+    </div>
+    <div class="wiz-step" data-step="hand" hidden>
+      <h2>What did people do by hand?</h2>
+      <p class="wiz-sub">Optional. Shown on your card under <b>BY HAND</b> so people see the human side too. It doesn't change the score.</p>
+      <label>By hand <small>(separate with commas)</small><input name="human" maxlength="160" placeholder="the idea, the guitar, the edit"></label>
+    </div>
+    <div class="wiz-nav">
+      <button class="btn ghost" type="button" data-wiz="back">Back</button>
+      <button class="btn" type="submit" data-wiz="next">Next</button>
+    </div>
+    <p class="small gen-status wiz-status" role="status"></p>
   </form>
-  <div class="gen-out">
-    <div class="meter-box"><canvas class="meter gen-canvas" aria-label="Your slop-o-meter, live"></canvas>
-    <div class="meter-ui"><button class="m-play" type="button">Play</button><input class="m-scrub" type="range" min="0" max="1000" value="1000" aria-label="Scrub"><label class="m-snd"><input type="checkbox" checked> sound</label></div></div>
+  <div class="gen-out" hidden>
+    <div class="meter-box"><button class="m-big" type="button" aria-label="Play the reveal" hidden><span>▶</span> Play the reveal</button><canvas class="meter gen-canvas" aria-label="Your slop-o-meter" width="1920" height="1080"></canvas>
+    <div class="meter-ui"><button class="m-play" type="button">Replay</button><input class="m-scrub" type="range" min="0" max="1000" value="0" aria-label="Scrub"><label class="m-snd"><input type="checkbox" checked> sound</label></div></div>
     <p class="gen-score"></p>
     <div class="gen-actions">
+      <a class="btn gen-go" rel="noopener nofollow ugc" target="_blank" hidden>Go to the work</a>
       <button class="btn" data-act="share" type="button">Share</button>
       <button class="btn ghost" data-act="mp4" type="button">Download video (.mp4)</button>
+      <button class="btn ghost" data-wiz="edit" type="button">Change answers</button>
+      <button class="btn ghost" data-wiz="restart" type="button">Check something else</button>
+      <button class="btn ghost gen-own" data-wiz="restart" type="button">Make your own</button>
     </div>
     <p class="small gen-status" role="status"></p>
+  </div>
+  <div class="reveal" hidden aria-live="assertive">
+    <div class="reveal-in">
+      <div class="reveal-dial"><div class="reveal-needle"></div></div>
+      <p class="reveal-odo"><span>0</span><span>0</span><span>0</span></p>
+      <p class="reveal-say">Weighing the slop…</p>
+    </div>
   </div>
   <dialog class="share-dlg" aria-labelledby="share-h">
     <div class="share-head"><h2 id="share-h">Share your slop-o-meter</h2><button class="share-x" type="button" data-act="close" aria-label="Close">&times;</button></div>
@@ -59,9 +88,8 @@ export function generatorBody({ rubric, paths }) {
     <p class="small gen-status" role="status"></p>
   </dialog>
 </section>
-<section class="wrap how" id="how"><h2>How the score works</h2>
-<p>The most AI a piece of work can use is: AI wrote it, AI directed it, AI generated the picture, AI generated the sound. Those four weigh 15 each. Generated images and code come next, then the helpers (tracking, masks and depth maps, motion graphics, sound effects, research), and audio cleanup and mastering weigh least. Each use gets a level: a touch, half, mostly or all AI. Points are weight times level; the score is the sum.</p>
-<table class="rubric"><thead><tr><th>Category</th><th>Weight</th><th>What counts</th></tr></thead><tbody>${rubric.categories.map(c => `<tr><td>${esc(c.label)}</td><td>${c.weight}</td><td>${esc(c.hint)}</td></tr>`).join('')}</tbody></table>
-<p>Verdicts: ${rubric.verdicts.map(v => `<span class="verdict-tag" style="--z:${ZONES[rubric.verdicts.indexOf(v)]}">${v.min}+ ${esc(v.text)}</span>`).join(' ')}</p>
-<p>Scale every level by how much of the finished piece that use covers. Overlays on a talk that's mostly your face don't make the talk mostly AI.</p></section>`;
+<section class="wrap how" id="how"><details><summary>How the score works</summary>
+<div class="how-body"></div>
+<p>Scale every level by how much of the finished piece that use covers. Overlays on a talk that's mostly your face don't make the talk mostly AI.</p>
+</details></section>`;
 }

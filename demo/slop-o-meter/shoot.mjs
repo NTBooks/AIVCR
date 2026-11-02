@@ -1,4 +1,4 @@
-// README picture for the slop-o-meter: the generator page, filled in, its card on the final frame.
+// README picture for the slop-o-meter: the generator page on one of its questions, answered from the example log.
 //   node demo/slop-o-meter/shoot.mjs <out_dir>
 // Run from the repo root after `npm install` in skills/slop-o-meter. demo/slop-o-meter/make.sh calls it.
 import { createRequire } from 'node:module';
@@ -22,18 +22,20 @@ const server = http.createServer((req, res) => {
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 
 const browser = await chromium.launch();
-const pg = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+const pg = await browser.newPage({ viewport: { width: 1100, height: 940 }, deviceScaleFactor: 1 });
 pg.on('pageerror', e => console.error('pageerror:', e.message));
-// open the generator as a shared link carrying the example log, so the form is filled in and the meter shows it
+// the example log as this browser's saved draft, so the check opens with its answers filled in
 const m = JSON.parse(readFileSync(path.join(SK, 'examples', 'example.json'), 'utf8'));
-const hash = Buffer.from(JSON.stringify(m), 'utf8').toString('base64');
-await pg.goto(`http://127.0.0.1:${server.address().port}/generator/#m=${hash}`);
-await pg.waitForFunction(() => /\d/.test(document.querySelector('.gen-score')?.textContent || ''));
-// a shared link autoplays: let it play to the end, where the verdict is stamped
-await pg.evaluate(() => { document.querySelector('.gen-shared').hidden = true; window.scrollTo(0, 0); });
-await pg.waitForFunction(() => /pause/i.test(document.querySelector('.m-play').textContent), null, { timeout: 10000 });
-await pg.waitForFunction(() => /play/i.test(document.querySelector('.m-play').textContent), null, { timeout: 40000 });
-await pg.waitForTimeout(400);
+const url = `http://127.0.0.1:${server.address().port}/generator/`;
+await pg.goto(url);
+await pg.evaluate(m => localStorage.setItem('slop-o-meter-draft', JSON.stringify({ ...m, kind: 'video', answered: ['writing', 'direction', 'video',
+  'audio', 'images', 'code', 'helpers', 'mograph', 'sfx', 'research', 'cleanup', 'mastering'] })), m);
+await pg.goto(url);
+await pg.waitForSelector('input[name=kind]:checked');
+// step through to the music question: kind, name, then the video kind's questions in order
+for (let i = 0; i < 20 && !/music and vocals/.test(await pg.textContent('.wiz-q-h')); i++) await pg.click('[data-wiz=next]');
+await pg.mouse.move(0, 0);
+await pg.waitForTimeout(400);   // let the step's slide-in finish
 await pg.screenshot({ path: path.join(out, 'generator.png') });
 console.log('wrote generator.png to', out);
 await browser.close(); server.close();

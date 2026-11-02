@@ -31,6 +31,14 @@ Each use gets a **level**: 0 none, 0.25 a touch, 0.5 half, 0.75 mostly, 1 all AI
 the sum. Verdicts: 0 HAND-RAISED, 10 A PINCH OF SLOP, 30 SLOP-ADJACENT, 50 CERTIFIED SLOP, 70 PRIME SLOP, 90 PURE TROUGH.
 To change a weight or a verdict, edit `rubric.json` (the gauge's colour bands follow the verdicts).
 
+**Not a video?** Set `"kind"` in the log: `video` (the default, the table above), `music`, `writing`, `image` or `code`.
+Each kind asks only its own categories, with its own weights, scaled so they total 100 (`rubric.json` "kinds";
+`python scripts/score.py --rubric` lists them). `code` can add `"extras": ["visual"]` (graphics) and/or `"sound"`.
+A category that doesn't fit this piece (lyrics on an instrumental) goes in `"na": ["writing"]`: it's left out and the
+rest scale back up to 100. Each kind's core category (marked * by `--rubric`) can't be skipped. A use for a category
+the kind doesn't ask about isn't scored, and score.py says so. Only ever add categories to the end of `rubric.json`:
+the web generator's share links refer to them by position.
+
 **Scale every level by the share of the finished work it covers.** Overlays on a talk that is mostly the person on
 camera rarely go past half; direction is a touch when the person chose the cuts.
 
@@ -64,7 +72,7 @@ Guides (check each against the project, never assume):
    splitting, depth maps, foley), how many rounds of notes. Their answer wins over your estimate.
 3. **Write `slop.json`:**
    ```json
-   { "title": "One-Shot Dummy", "byline": "a music video",
+   { "title": "One-Shot Dummy", "byline": "a music video", "kind": "video",
      "uses": [ { "cat": "audio", "level": 1, "text": "Song and vocals made in Suno v6 (take 12 of 12)" } ],
      "human": ["the idea", "the brief", "every note", "picking the take"] }
    ```
