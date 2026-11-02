@@ -145,8 +145,9 @@ Then ask Claude Code for "a slop-o-meter for this video". The card ends on its v
 
 <p align="center"><img src="assets/slop-o-meter/card-final.png" alt="The final frame: nine logged AI uses with their points, NONE: AI video, BY HAND: the idea, the brief, every note, picking the take, and the gauge at 62.5 stamped CERTIFIED SLOP" width="860"></p>
 
-**The web generator** is in `skills/slop-o-meter/generator`: the same card made in the browser, with a share link,
-.mp4, .html, .png and .webm downloads. It's the code behind [slopscore.org/slop-o-meter](https://slopscore.org/slop-o-meter/),
+**The web generator** is in `skills/slop-o-meter/generator`: the same card made in the browser. It asks what you're
+checking (a video, music, writing, a still image or code), then one plain question at a time, and reveals the score at
+the end, with a share link and .mp4, .html, .png and .webm downloads. It's the code behind [slopscore.org/slop-o-meter](https://slopscore.org/slop-o-meter/),
 which builds from this folder. To run it locally:
 
 ```bash
@@ -155,7 +156,7 @@ cd AIVCR/skills/slop-o-meter && node generator/build.mjs && python -m http.serve
 
 Open http://localhost:5199/generator/. Edit `generator/form.mjs` or `rubric.json`, then rebuild `generator/index.html`.
 
-<p align="center"><img src="assets/slop-o-meter/generator.png" alt="The web generator: each category has none / a touch / half / mostly / all AI buttons and a line of text; the live card beside the form shows 62.5, Certified Slop, with Share and Download video buttons" width="860"></p>
+<p align="center"><img src="assets/slop-o-meter/generator.png" alt="The web generator on question 4 of 12, Where did the music and vocals come from?, with five answers from I played, sang or recorded it all to AI generated all the music and vocals (picked), a Doesn't apply option, and the line that goes on the card" width="860"></p>
 
 The pictures above come from `bash demo/slop-o-meter/make.sh` (it renders the example log, makes the GIF and takes the
 screenshot), so they can be remade after the card or the page changes.
