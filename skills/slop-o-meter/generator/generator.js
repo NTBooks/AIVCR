@@ -256,55 +256,78 @@
   // ---- the hand-offs ----
   function slug() { return (read().title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'slop') + '-slop-o-meter'; }
   function save(blob, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000); }
-  function copy(text, what) { (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { say(what + ' copied.'); }, function () { window.prompt('Copy this:', text); }); }
+  function copy(text, what) { (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { say(what + ' copied.' + (what === 'Discord link' ? ' Paste it into a message.' : '')); }, function () { window.prompt('Copy this:', text); }); }
   function json(x) { return JSON.stringify(x).replace(/</g, '\\u003c'); }
-  // ---- share links: the whole log rides in the #hash (never sent to a server), kept short and readable ----
-  //   #k=music&a=4n0132&t=Night+Bus+Home&b=a+lo-fi+track&u=youtu.be/x&h=the+idea,the+mix&n3=My+own+words
-  // k kind · x extras (comma list) · a one character per rubric category, in rubric.json order: 0-4 the answer, n doesn't
-  // apply, - not asked (trailing - dropped) · t title · b byline (left out when it's the kind's default) · u link without
-  // https:// · h by hand · n<i> card text for category i, only when it isn't the answer's own wording.
-  // rubric.json "categories" must only ever be appended to, never reordered, or old links would read wrong.
-  // Links made before this (#m=<base64 JSON>) still open.
-  function q(s) { return encodeURIComponent(s).replace(/%20/g, '+').replace(/%2C/g, ',').replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/%40/g, '@').replace(/%3F/g, '?').replace(/%3D/g, '='); }
-  function encodeShare(m) {
-    var R = rubricFor(m.kind, m.extras, []), asked = {}, p = ['k=' + m.kind];
+  // ---- share links: the whole log rides in the #hash (never sent to a server), packed so it isn't readable at a glance ----
+  //   #s=<p|z><base64url>: the fields below joined by \x1f, as UTF-8; z means deflate-raw compressed (used when shorter).
+  // Fields: kind · extras (comma list) · answers, one character per rubric category in rubric.json order (0-4 the answer,
+  // n doesn't apply, - not asked; trailing - dropped) · title · byline (empty when it's the kind's default) · link without
+  // https:// · by hand (comma list) · then pairs of category index and card text, only where it isn't the answer's own
+  // wording. rubric.json "categories" must only ever be appended to, never reordered, or old links would read wrong.
+  // This only disguises the log; anyone can decode it. Links made before this still open: #k=…&a=… (readable) and
+  // #m=<base64 JSON> (the first ones).
+  var SEP = '\x1f';
+  function fields(m) {
+    var R = rubricFor(m.kind, m.extras, []), asked = {}, clean = function (x) { return String(x || '').split(SEP).join(' '); };
     R.categories.forEach(function (c) { asked[c.id] = c; });
-    if (m.extras && m.extras.length) p.push('x=' + m.extras.join(','));
     var a = BASE.categories.map(function (c) {
       if (!asked[c.id]) return '-';
       if ((m.na || []).indexOf(c.id) >= 0 && !asked[c.id].core) return 'n';
       var u = m.uses.filter(function (x) { return x.cat === c.id; })[0];
       return String(u ? LEVELS.indexOf(nearest(u.level)) : 0);
     }).join('').replace(/-+$/, '');
-    p.push('a=' + a);
-    if (m.title && m.title !== R.kind.untitled) p.push('t=' + q(m.title));
-    if (m.byline && m.byline !== R.kind.byline) p.push('b=' + q(m.byline));
-    if (m.url) p.push('u=' + q(m.url.replace(/^https:\/\//, '')));
-    if (m.human && m.human.length) p.push('h=' + q(m.human.join(',')));
+    var f = [m.kind, (m.extras || []).join(','), a, m.title && m.title !== R.kind.untitled ? m.title : '',
+      m.byline && m.byline !== R.kind.byline ? m.byline : '', (m.url || '').replace(/^https:\/\//, ''), (m.human || []).join(',')].map(clean);
     BASE.categories.forEach(function (c, i) {
       var u = m.uses.filter(function (x) { return x.cat === c.id; })[0];
-      if (u && asked[c.id] && u.text && u.text !== optionText(asked[c.id], u.level)) p.push('n' + i + '=' + q(u.text));
+      if (u && asked[c.id] && u.text && u.text !== optionText(asked[c.id], u.level)) f.push(String(i), clean(u.text));
     });
-    return p.join('&');
+    while (f.length > 3 && f[f.length - 1] === '') f.pop();
+    return f;
   }
-  function decodeShare(hash) {   // -> a manifest, or null if this hash isn't a share link
-    var h = hash.replace(/^#/, '');
-    if (/^m=/.test(h)) return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(h.slice(2))))));   // the old long links
-    var p = new URLSearchParams(h); if (!p.has('a')) return null;
-    var k = kindOf(p.get('k')), extras = (p.get('x') || '').split(',').filter(Boolean), a = p.get('a');
-    var m = { kind: k.id, extras: extras, title: p.get('t') || '', byline: p.get('b') || '', url: p.get('u') || '', uses: [], na: [],
-      human: (p.get('h') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean) };
+  function unfields(get) {   // get(name) for the readable links, or an array for packed ones -> a manifest
+    var f = Array.isArray(get) ? get : null, v = function (i, n) { return f ? (f[i] || '') : (get(n) || ''); };
+    var k = kindOf(v(0, 'k')), a = v(2, 'a'), notes = {};
+    if (f) for (var j = 7; j + 1 < f.length; j += 2) notes[f[j]] = f[j + 1]; else BASE.categories.forEach(function (c, i) { if (get('n' + i)) notes[i] = get('n' + i); });
+    var m = { kind: k.id, extras: v(1, 'x').split(',').filter(Boolean), title: v(3, 't'), byline: v(4, 'b'), url: v(5, 'u'), uses: [], na: [],
+      human: v(6, 'h').split(',').map(function (s) { return s.trim(); }).filter(Boolean) };
     BASE.categories.forEach(function (c, i) {
       var ch = a.charAt(i);
       if (ch === 'n') m.na.push(c.id);
-      else if (/[1-4]/.test(ch)) m.uses.push({ cat: c.id, level: LEVELS[+ch], text: p.get('n' + i) || '' });
+      else if (/[1-4]/.test(ch)) m.uses.push({ cat: c.id, level: LEVELS[+ch], text: notes[i] || '' });
     });
     return m;
   }
-  function link() { return location.origin + location.pathname + '#' + encodeShare(read()); }
+  function b64(bytes) { var s = ''; bytes.forEach(function (x) { s += String.fromCharCode(x); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64(t) { var s = atob(t.replace(/-/g, '+').replace(/_/g, '/')), out = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i); return out; }
+  function squash(bytes, how) {   // deflate-raw through the browser's CompressionStream; resolves null where there isn't one
+    var S = how === 'z' ? window.CompressionStream : window.DecompressionStream;
+    if (!S) return Promise.resolve(null);
+    try { return new Response(new Blob([bytes]).stream().pipeThrough(new S('deflate-raw'))).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+    catch (e) { return Promise.resolve(null); }
+  }
+  function encodeShare(m) {   // -> Promise of the hash, without the #
+    var plain = new TextEncoder().encode(fields(m).join(SEP));
+    return squash(plain, 'z').then(function (z) { return 's=' + (z && z.length < plain.length ? 'z' + b64(z) : 'p' + b64(plain)); });
+  }
+  function decodeShare(hash) {   // -> Promise of a manifest, or of null if this hash isn't a share link
+    var h = hash.replace(/^#/, '');
+    try {
+      if (/^s=[pz]/.test(h)) {
+        var bytes = unb64(h.slice(3));
+        var got = h.charAt(2) === 'z' ? squash(bytes, 'unz') : Promise.resolve(bytes);
+        return got.then(function (b) { if (!b) throw new Error('can\'t unpack'); return unfields(new TextDecoder().decode(b).split(SEP)); });
+      }
+      if (/^m=/.test(h)) return Promise.resolve(JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(h.slice(2)))))));   // the first, long links
+      var p = new URLSearchParams(h);
+      return Promise.resolve(p.has('a') ? unfields(function (n) { return p.get(n); }) : null);   // the readable ones
+    } catch (e) { return Promise.reject(e); }
+  }
+  function link() { return encodeShare(read()).then(function (h) { return location.origin + location.pathname + '#' + h; }); }
   function blurb() { var m = read(), s = SlopMeter.score(m, rubric()); return m.title + ' scores ' + fmt(s.SCORE) + '/100 on the slop-o-meter (' + s.VERDICT.toLowerCase() + '). Here\'s where the AI went:'; }
-  function share() {   // fill the dialog for the log as it stands now
-    var u = link(), t = blurb(), e = encodeURIComponent;
+  function share() { link().then(fill); }   // fill the dialog for the log as it stands now, then open it
+  function fill(u) {
+    var t = blurb(), e = encodeURIComponent;
     dlg.querySelector('.share-url').value = u;
     var to = { x: 'https://x.com/intent/post?text=' + e(t) + '&url=' + e(u), bsky: 'https://bsky.app/intent/compose?text=' + e(t + ' ' + u),
       reddit: 'https://www.reddit.com/submit?url=' + e(u) + '&title=' + e(t), facebook: 'https://www.facebook.com/sharer/sharer.php?u=' + e(u),
@@ -378,9 +401,13 @@
     png: function () { player.pause(); player.seek(meter.DURATION); cv.toBlob(function (b) { save(b, slug() + '.png'); }); },
     desc: function () { copy(describe(), 'Description text'); },
     json: function () { copy(JSON.stringify(read(), null, 1), 'JSON'); },
-    link: function () { copy(link(), 'Link'); },
+    link: function () { copy(dlg.querySelector('.share-url').value, 'Link'); },
+    discord: function () {   // a masked link, [text](url), which Discord shows as the text; no score in it, so the reveal still lands
+      var t = read().title.replace(/[\[\]]/g, '');
+      copy('[' + t + ': how much AI went into it? Find out on the slop-o-meter](' + dlg.querySelector('.share-url').value + ')', 'Discord link');
+    },
     share: share,
-    native: function () { navigator.share({ title: read().title + ': slop-o-meter', text: blurb(), url: link() }).catch(function () { /* cancelled */ }); },
+    native: function () { navigator.share({ title: read().title + ': slop-o-meter', text: blurb(), url: dlg.querySelector('.share-url').value }).catch(function () { /* cancelled */ }); },
     close: function () { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
   };
   [document.querySelector('.gen-actions'), dlg].forEach(function (el) {
@@ -456,16 +483,19 @@
   // ---- start: a shared link, ?from=, the last draft, or a blank check ----
   fetch(rel(P.rubric || '../rubric.json')).then(function (r) { return r.json(); }).then(function (r) {
     BASE = r; explain();
-    var from = new URLSearchParams(location.search).get('from'), sm = null;
-    if (location.hash.length > 1) { try { sm = decodeShare(location.hash); } catch (e) { say('That link didn\'t decode.'); } }
+    var from = new URLSearchParams(location.search).get('from');
+    function bad() { say('That link didn\'t decode.'); return null; }
     // a share link pasted into a tab that already has this page open only changes the #hash, which doesn't reload
     addEventListener('hashchange', function () {
-      var m2 = null; try { m2 = decodeShare(location.hash); } catch (e) { return say('That link didn\'t decode.'); }
-      if (m2) { if (dlg.open) ACT.close(); reveal.hidden = true; write(m2); go(2); enterShared(); scrollTo(0, 0); }
+      decodeShare(location.hash).catch(bad).then(function (m2) {
+        if (m2) { if (dlg.open) ACT.close(); reveal.hidden = true; write(m2); go(2); enterShared(); scrollTo(0, 0); }
+      });
     });
-    if (sm) { write(sm); go(2); return enterShared(); }
-    if (from && P.slops && /^[a-z0-9-]+$/.test(from)) return load(rel(P.slops + from + '.json'));
-    loadDraft();
-    go(0);
+    return (location.hash.length > 1 ? decodeShare(location.hash).catch(bad) : Promise.resolve(null)).then(function (sm) {
+      if (sm) { write(sm); go(2); return enterShared(); }
+      if (from && P.slops && /^[a-z0-9-]+$/.test(from)) return load(rel(P.slops + from + '.json'));
+      loadDraft();
+      go(0);
+    });
   });
 })();

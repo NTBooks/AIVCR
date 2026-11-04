@@ -70,7 +70,7 @@ export function generatorBody({ rubric, paths }) {   // rubric: unused now (gene
     <div class="share-link"><input class="share-url" readonly aria-label="Link to your slop-o-meter"><button class="btn" data-act="link" type="button">Copy link</button></div>
     <div class="share-to">
       <button class="share-native" data-act="native" type="button" hidden>Share&hellip;</button>
-      <a data-to="x" target="_blank" rel="noopener">X</a><a data-to="bsky" target="_blank" rel="noopener">Bluesky</a><a data-to="reddit" target="_blank" rel="noopener">Reddit</a>
+      <a data-to="x" target="_blank" rel="noopener">X</a><a data-to="bsky" target="_blank" rel="noopener">Bluesky</a><button data-act="discord" type="button" title="Copies a link with display text, ready to paste into Discord">Discord</button><a data-to="reddit" target="_blank" rel="noopener">Reddit</a>
       <a data-to="facebook" target="_blank" rel="noopener">Facebook</a><a data-to="linkedin" target="_blank" rel="noopener">LinkedIn</a><a data-to="email">Email</a>
     </div>
     <h3>Download</h3>
