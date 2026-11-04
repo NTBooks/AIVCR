@@ -155,6 +155,9 @@ cd AIVCR/skills/slop-o-meter && node generator/build.mjs && python -m http.serve
 ```
 
 Open http://localhost:5199/generator/. Edit `generator/form.mjs` or `rubric.json`, then rebuild `generator/index.html`.
+Share links keep the log after the `#`, which link previews never see, so every shared link previews as the page
+itself: `generator/og.jpg` (remade by `node generator/og-image.mjs`) and the wording in `form.mjs` `previewMeta()` are
+generic on purpose, a gauge with a question mark, so a preview can't pass for the shared work's score.
 
 <p align="center"><img src="assets/slop-o-meter/generator.png" alt="The web generator on question 4 of 12, Where did the music and vocals come from?, with five answers from I played, sang or recorded it all to AI generated all the music and vocals (picked), a Doesn't apply option, and the line that goes on the card" width="860"></p>
 

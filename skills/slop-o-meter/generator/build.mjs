@@ -1,10 +1,11 @@
 // Build the standalone generator page: node generator/build.mjs  ->  generator/index.html
 // Serve the skill folder (python -m http.server 5199) and open http://localhost:5199/generator/ : fetch() and the
 // module imports don't work from file://. Rebuild after changing rubric.json or form.mjs.
+// The preview image is relative here (this page doesn't know where it'll be hosted); a site should pass absolute URLs.
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { generatorBody } from './form.mjs';
+import { generatorBody, previewMeta } from './form.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const rubric = JSON.parse(readFileSync(path.join(HERE, '..', 'rubric.json'), 'utf8'));
@@ -13,6 +14,7 @@ writeFileSync(path.join(HERE, 'index.html'), `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Slop-o-meter</title>
 <meta name="description" content="How much AI went into your video, song, writing, image or code? Answer a few questions, get a score out of 100 and an animated brass gauge to share or download.">
+${previewMeta({ image: 'og.jpg' })}
 <link rel="stylesheet" href="generator.css">
 </head><body>
 <!-- built by generator/build.mjs from form.mjs and ../rubric.json: edit those, not this file -->

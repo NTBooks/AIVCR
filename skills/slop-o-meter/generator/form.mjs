@@ -8,6 +8,26 @@
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const ZONES = ['#6fae8c', '#a9c26a', '#e2c06a', '#e8669a', '#cc3f79', '#8a5a30'];
 
+// The link-preview tags for the generator page's <head>. Share links keep their log after the #, which previews never
+// see, so a shared link previews as this page: the wording and og.jpg (node generator/og-image.mjs) are generic on
+// purpose, so the preview doesn't pass for the shared work's result. url and image should be absolute.
+export const PREVIEW = {
+  title: 'Slop-o-meter: how much AI went into it?',
+  description: 'Open a shared slop-o-meter to see where the AI went and its score out of 100, or check how much AI went into your own video, song, writing, image or code.',
+};
+export function previewMeta({ url, image }) {
+  return [
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:title" content="${esc(PREVIEW.title)}">`,
+    `<meta property="og:description" content="${esc(PREVIEW.description)}">`,
+    url ? `<meta property="og:url" content="${esc(url)}">` : '',
+    `<meta property="og:image" content="${esc(image)}">`,
+    `<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">`,
+    `<meta property="og:image:alt" content="The slop-o-meter's brass gauge with a question mark where the score would be">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+  ].filter(Boolean).join('\n');
+}
+
 export function generatorBody({ rubric, paths }) {   // rubric: unused now (generator.js reads it), kept so callers don't change
   return `<section class="wrap page-head"><p class="kicker page-kicker" hidden>Shared with you</p><h1>Slop-o-meter</h1>
 <p class="lede">How much AI went into your video, song, writing, image or code? Answer a few questions and find out.</p></section>
@@ -70,7 +90,7 @@ export function generatorBody({ rubric, paths }) {   // rubric: unused now (gene
     <div class="share-link"><input class="share-url" readonly aria-label="Link to your slop-o-meter"><button class="btn" data-act="link" type="button">Copy link</button></div>
     <div class="share-to">
       <button class="share-native" data-act="native" type="button" hidden>Share&hellip;</button>
-      <a data-to="x" target="_blank" rel="noopener">X</a><a data-to="bsky" target="_blank" rel="noopener">Bluesky</a><a data-to="reddit" target="_blank" rel="noopener">Reddit</a>
+      <a data-to="x" target="_blank" rel="noopener">X</a><a data-to="bsky" target="_blank" rel="noopener">Bluesky</a><button data-act="discord" type="button" title="Copies a link with display text, ready to paste into Discord">Discord</button><a data-to="reddit" target="_blank" rel="noopener">Reddit</a>
       <a data-to="facebook" target="_blank" rel="noopener">Facebook</a><a data-to="linkedin" target="_blank" rel="noopener">LinkedIn</a><a data-to="email">Email</a>
     </div>
     <h3>Download</h3>
