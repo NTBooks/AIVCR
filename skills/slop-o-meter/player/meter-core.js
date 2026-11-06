@@ -147,9 +147,16 @@
         ctx.fillStyle = brass(ctx, sx - 8, sy - 8, sx + 8, sy + 8); ctx.beginPath(); ctx.arc(sx, sy, 8, 0, 7); ctx.fill();
         ctx.strokeStyle = 'rgba(40,20,0,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sx - 6, sy - 2); ctx.lineTo(sx + 6, sy + 2); ctx.stroke(); }
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      fitFont(M.title, w - 120, 64, 34, SERIF, 'bold');
-      ctx.fillStyle = 'rgba(255,240,190,.55)'; ctx.fillText(M.title, x + w / 2 + 2, y + h / 2 + 3);
-      ctx.fillStyle = '#2a1608'; ctx.fillText(M.title, x + w / 2, y + h / 2);
+      // a long title ran past the plate at the 34 px floor: shrink further, then break onto two lines
+      let lines = [M.title];
+      if (fitFont(M.title, w - 120, 64, 28, SERIF, 'bold') === 28) { ctx.font = `bold 28px ${SERIF}`; if (ctx.measureText(M.title).width > w - 120) {
+        const words = M.title.split(' '); let best = 1, gap = 1e9;
+        for (let k = 1; k < words.length; k++) { const d = Math.abs(ctx.measureText(words.slice(0, k).join(' ')).width - ctx.measureText(words.slice(k).join(' ')).width); if (d < gap) { gap = d; best = k; } }
+        lines = [words.slice(0, best).join(' '), words.slice(best).join(' ')]; } }
+      const fs = Math.min(...lines.map((l) => fitFont(l, w - 120, lines.length > 1 ? 44 : 64, 24, SERIF, 'bold'))); ctx.font = `bold ${fs}px ${SERIF}`;
+      lines.forEach((l, k) => { const ly = y + h / 2 + (k - (lines.length - 1) / 2) * fs * 1.05;
+        ctx.fillStyle = 'rgba(255,240,190,.55)'; ctx.fillText(l, x + w / 2 + 2, ly + 3);
+        ctx.fillStyle = '#2a1608'; ctx.fillText(l, x + w / 2, ly); });
     }
 
     function drawLog(t) {
