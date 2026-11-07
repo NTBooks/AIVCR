@@ -21,9 +21,9 @@ for w in words:
     if cur and (len(text) > 42 or w[1] - cur[0][0] > 3.2 or w[0] - cur[-1][1] > 0.6):
         lines.append(cur); cur = []
     cur.append(w)
-    if w[2][-1:] in ".?!" and len(" ".join(x[2] for x in cur)) > 14: lines.append(cur); cur = []
+    if w[2] and w[2][-1] in ".?!" and len(" ".join(x[2] for x in cur)) > 14: lines.append(cur); cur = []
 if cur: lines.append(cur)
-def ts(t): h, m, s = int(t // 3600), int(t // 60) % 60, t % 60; return f"{h:02d}:{m:02d}:{int(s):02d},{int(round((s % 1) * 1000)) % 1000:03d}"
+def ts(t): ms = int(round(t * 1000)); return f"{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}"
 out = []
 for i, L in enumerate(lines, 1):
     text = " ".join(x[2] for x in L)

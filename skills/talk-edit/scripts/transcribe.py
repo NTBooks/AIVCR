@@ -15,12 +15,13 @@ PROMPT = (R / "prompt.txt").read_text(encoding="utf8").strip() if (R / "prompt.t
 from faster_whisper import WhisperModel
 model = WhisperModel(os.environ.get("WHISPER_MODEL", "small.en"), device="cpu", compute_type="int8")
 for name, path in TAKES:
-    path = path.strip(); wav = R / "audio16" / f"{name}.wav"
-    if not wav.exists():
+    path = path.strip(); wav = R / "audio16" / f"{name}.wav"; mark = R / "audio16" / f"{name}.src"
+    if not wav.exists() or not mark.exists() or mark.read_text(encoding="utf8") != path:   # takes.txt may now point the name at a retake
         # the louder channel only: some mics put a -6 dB copy (or nothing) on the other one
         raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-vn", "-ac", "2", "-ar", "16000", "-f", "f32le", "-"], capture_output=True, check=True).stdout
         a = np.frombuffer(raw, np.float32).reshape(-1, 2); ch = 0 if a[:, 0].std() >= a[:, 1].std() else 1
         subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", path, "-af", f"pan=mono|c0=c{ch}", "-ar", "16000", "-c:a", "pcm_s16le", str(wav)], check=True)
+        mark.write_text(path, encoding="utf8")
     segs, _ = model.transcribe(str(wav), word_timestamps=True, vad_filter=True, initial_prompt=PROMPT)
     words, lines = [], []
     for s in segs:

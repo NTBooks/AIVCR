@@ -17,9 +17,19 @@ SR, X = 48000, 0.04
 (R / "pieces").mkdir(exist_ok=True)
 
 # ---- picture ----
+SIZE = {}
+def size(src):
+    if src not in SIZE:
+        w, h = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0", src],
+                              capture_output=True, text=True, check=True).stdout.strip().split(",")[:2]
+        SIZE[src] = (int(w), int(h))
+    return SIZE[src]
+def clamp(b, W, H):   # delogo refuses a box that touches the frame's edge
+    x, y = max(1, int(b[3])), max(1, int(b[4])); return x, y, max(4, min(int(b[5]), W - x - 2)), max(4, min(int(b[6]), H - y - 2))
 for s in segs:
     boxes = [b for b in BLUR if b[0] == s["take"] and b[2] > s["in"] and b[1] < s["out"]]
-    vf = ",".join(f"delogo=x={max(1, b[3])}:y={max(1, b[4])}:w={b[5]}:h={b[6]}:enable='between(t,{b[1] - s['in']:.3f},{b[2] - s['in']:.3f})'" for b in boxes) or "null"
+    W, H = size(s["src"]) if boxes else (0, 0)
+    vf = ",".join("delogo=x={}:y={}:w={}:h={}".format(*clamp(b, W, H)) + f":enable='between(t,{b[1] - s['in']:.3f},{b[2] - s['in']:.3f})'" for b in boxes) or "null"
     key = hashlib.md5(json.dumps([s["src"], s["in"], s["out"], vf, FPS]).encode()).hexdigest()[:10]
     s["file"] = f"pieces/{s['i']:03d}_{key}.mkv"
     if (R / s["file"]).exists(): continue
@@ -38,22 +48,22 @@ def take_audio(src):
         a = np.frombuffer(raw, np.float32).reshape(-1, 2)
         # one voice, centred: average the channels when they carry the same signal, else keep the louder one
         c = np.corrcoef(a[:, 0], a[:, 1])[0, 1] if a[:, 0].std() > 0 and a[:, 1].std() > 0 else 0
-        m = a.mean(1) if c >= 0.5 else a[:, int(a[:, 1].std() > a[:, 0].std())]
-        cache[src] = np.stack([m, m], 1)
+        cache[src] = (a.mean(1) if c >= 0.5 else a[:, int(a[:, 1].std() > a[:, 0].std())]).copy()   # mono: one array, not two
+        del a
     return cache[src]
 n = int(round(total * SR)); out = np.zeros((n, 2), np.float32)
 x = int(X * SR); ramp = np.sin(np.linspace(0, np.pi / 2, 2 * x, dtype=np.float32))[:, None]
 for k, s in enumerate(segs):
-    a = take_audio(s["src"]); o0 = int(round(s["start"] * SR)) - x; i0 = int(round(s["in"] * SR)) - x
+    a = take_audio(s["src"])[:, None]; o0 = int(round(s["start"] * SR)) - x; i0 = int(round(s["in"] * SR)) - x
     piece = a[max(0, i0):i0 + int(round(s["dur"] * SR)) + 2 * x].copy()
-    if i0 < 0: piece = np.concatenate([np.zeros((-i0, 2), np.float32), piece])
+    if i0 < 0: piece = np.concatenate([np.zeros((-i0, 1), np.float32), piece])
     if k > 0: piece[:2 * x] *= ramp                                   # fade in across the join
     if k < len(segs) - 1: piece[-2 * x:] *= ramp[::-1]                  # fade out across the next
-    p0, p1 = max(0, o0), min(n, o0 + len(piece)); out[p0:p1] += piece[p0 - o0:p1 - o0]
+    p0, p1 = max(0, o0), min(n, o0 + len(piece)); out[p0:p1] += piece[p0 - o0:p1 - o0]   # mono into both channels
 first = take_audio(segs[0]["src"]); hop = SR // 10
-lv = np.sqrt((first[:len(first) // hop * hop].reshape(-1, hop, 2) ** 2).mean((1, 2))); win = np.convolve(lv, np.ones(10), "valid")
+lv = np.sqrt((first[:len(first) // hop * hop].reshape(-1, hop) ** 2).mean(1)); win = np.convolve(lv, np.ones(10), "valid")
 win[np.convolve(lv < 1e-5, np.ones(10), "valid") > 0] = np.inf   # never digital silence
-k0 = int(np.argmin(win)); tone = first[k0 * hop:k0 * hop + SR].copy(); f = int(0.2 * SR); w = np.linspace(0, 1, f, dtype=np.float32)[:, None]
+k0 = int(np.argmin(win)); tone = np.repeat(first[k0 * hop:k0 * hop + SR, None], 2, 1); f = int(0.2 * SR); w = np.linspace(0, 1, f, dtype=np.float32)[:, None]
 bed = np.zeros((0, 2), np.float32)
 while len(bed) < n:
     t_ = tone.copy(); t_[:f] *= w; t_[-f:] *= w[::-1]

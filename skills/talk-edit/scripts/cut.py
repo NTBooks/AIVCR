@@ -16,7 +16,7 @@ plan.json:
               {"take": "c1", "in": 103.8, "out": 573.6, "exact_out": true, "note": "keeps the waving after the last word"} ] }
   "exact_in"/"exact_out": use the time as given (a gesture or a beat after the last word); "tighten": false keeps a piece's pauses.
 usage: python cut.py [project dir]   (needs transcribe.py first)"""
-import json, pathlib, sys, wave
+import json, pathlib, subprocess, sys
 import numpy as np
 
 R = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".")
@@ -31,12 +31,16 @@ ENV = {}
 def env(take):
     """loudness in 5 ms steps, and the floor under which it counts as quiet"""
     if take not in ENV:
-        w = wave.open(str(R / "audio16" / f"{take}.wav")); x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
-        hop = w.getframerate() // 200; n = len(x) // hop
+        # the original recording as float, not the 16-bit analysis copy: there quiet room tone rounds to exact zero and passes for a dropout
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", TAKES[take].strip(), "-vn", "-ac", "1", "-ar", "16000", "-f", "f32le", "-"], capture_output=True, check=True).stdout
+        x = np.frombuffer(raw, np.float32); hop = 80; n = len(x) // hop
         db = 20 * np.log10(np.sqrt((x[:n * hop].reshape(n, hop) ** 2).mean(1)) + 1e-6)
-        zero = np.abs(x[:n * hop].reshape(n, hop)).max(1) < 2 / 32768            # digital silence: a mic dropout
+        zero = np.abs(x[:n * hop].reshape(n, hop)).max(1) == 0                   # digital silence: a mic dropout
         ENV[take] = (db, max(np.percentile(db, 95) - 30, np.percentile(db, 10) + 8), zero)
     return ENV[take]
+
+def quiet_from(db, fl, k): return k + RUN <= len(db) and (db[k:k + RUN] < fl).all()       # RUN blocks of quiet start at k
+def quiet_to(db, fl, k): return k - RUN + 1 >= 0 and (db[k - RUN + 1:k + 1] < fl).all()   # ... end at k
 
 def clean_out(take, t):
     db, fl, _ = env(take); n = len(db); i = min(n - 1, int(round(t * 200)))
@@ -44,8 +48,8 @@ def clean_out(take, t):
     while j > 0 and db[j] < fl and i - j < 200: j -= 1        # back to the last sound before t, if t is in quiet
     if db[j] < fl: return t
     k = j
-    while k < n - 1 and db[k] >= fl and k - j < REACH * 200: k += 1
-    if db[k] >= fl:                                           # no quiet in reach: the next word touches this one; take the deepest dip
+    while k < n - 1 and not quiet_from(db, fl, k) and k - j < REACH * 200: k += 1
+    if not quiet_from(db, fl, k):                                           # no quiet in reach: the next word touches this one; take the deepest dip
         i0, i1 = max(0, i - 6), min(n, i + int(REACH * 200)); return (i0 + int(np.argmin(db[i0:i1]))) / 200
     q = k
     while q < n - 1 and db[q] < fl and q - k < AIR_OUT * 200: q += 1
@@ -58,8 +62,8 @@ def clean_in(take, t):
     while j < n - 1 and db[j] < fl and j - i < 200: j += 1    # forward to the first sound after t, if t is in quiet
     if db[j] < fl: return t
     k = j
-    while k > 0 and db[k] >= fl and j - k < REACH * 200: k -= 1
-    if db[k] >= fl:
+    while k > 0 and not quiet_to(db, fl, k) and j - k < REACH * 200: k -= 1
+    if not quiet_to(db, fl, k):
         i0, i1 = max(0, i - int(REACH * 200)), min(n, i + 6); return (i0 + int(np.argmin(db[i0:i1]))) / 200
     q = k
     while q > 0 and db[q] < fl and k - q < AIR_IN * 200: q -= 1
@@ -81,6 +85,7 @@ for p in plan["pieces"]:
     take = p["take"]
     a = p["in"] if p.get("exact_in") else clean_in(take, p["in"])
     b = p["out"] if p.get("exact_out") else clean_out(take, p["out"])
+    b = min(b, len(env(take)[0]) / 200 - 0.05)              # never past the end of the recording (an exact_out can ask for it)
     pieces, x = [], a
     if p.get("tighten", True):
         for q0, q1 in quiet_runs(take, a, b, MIN_PAUSE):

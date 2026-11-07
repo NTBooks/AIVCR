@@ -8,7 +8,7 @@ ap = argparse.ArgumentParser(); ap.add_argument("takes", nargs="*"); ap.add_argu
 args = ap.parse_args()
 takes = list(args.takes)
 if args.clips:
-    takes += [l.split(" ", 1)[1].strip() for l in open(args.clips, encoding="utf8") if " " in l.strip()]
+    takes += [l.split(" ", 1)[1].strip() for l in open(args.clips, encoding="utf8") if " " in l.strip() and not l.lstrip().startswith("#")]
 if args.latest:
     takes += sorted(glob.glob(os.path.expanduser("~/Videos/*.mp4")), key=os.path.getmtime)[-args.latest:]
 if not takes: ap.error("no takes")
