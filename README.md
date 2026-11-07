@@ -126,6 +126,28 @@ review/notes_draft2.done          you pressed Done
 
 `rects` are fractions of the frame, measured from the top-left: `{x, y, w, h}`.
 
+## Add-on: talk edit
+
+`skills/talk-edit` is the editing itself, for videos of someone talking: a vlog, a tutorial, a talk, a screen recording.
+Record one long take, keep going through mistakes, then let Claude do the cutting from the transcript. Six small scripts:
+
+| Script | Does |
+| --- | --- |
+| `check_takes.py` | right after recording: mic dropouts, clicks, clipping, a lopsided mic (so you can redo a line now) |
+| `transcribe.py` | every word with its timestamp (faster-whisper) |
+| `cut.py` | the cut from `plan.json`: edges only in real silence, air at every edge, long pauses tightened, dropouts cut, whole frames |
+| `build.py` | `edit.mp4`: the picture, crossfaded joins over the room's own tone, blur boxes for private info |
+| `level_audio.py` | the voice centred and levelled to -14 LUFS with one steady boost |
+| `make_srt.py` | subtitles from the words that made the cut |
+
+You and Claude plan the cut from the transcript together, and every draft goes on the review page for your notes.
+
+```bash
+cp -r AIVCR/skills/talk-edit ~/.claude/skills/ && pip install numpy faster-whisper
+```
+
+Then ask Claude Code to "edit my talk" with the folder of recordings. The skill's `SKILL.md` has the steps and the rules.
+
 ## Add-on: the slop-o-meter
 
 <p align="center"><img src="assets/slop-o-meter/card.gif" alt="The slop-o-meter card: a brass gauge on a cabin wall; a ship's log types out nine AI uses one by one, each kicking the needle higher and rolling the odometer, until it reads 62.5 and CERTIFIED SLOP is stamped across the gauge" width="860"></p>
