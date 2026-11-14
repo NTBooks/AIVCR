@@ -14,6 +14,10 @@ Two rounds in 48 seconds. On draft 1 you box the sky and ask for night. Draft 2 
 timeline, and a wipe compares it with the frame you marked. The moon is dull, so you box it and ask for a brighter
 one. Draft 3 lands, you wipe again, and both notes are closed.
 
+**See it on a real video:** [How To: Replace Premiere and After Effects with Claude](https://youtu.be/szs6Ns8k-ws)
+walks through the whole workflow, from the brain dump to the upload. The talk was edited this way, and its demo
+(6:41) is the review page itself: Claude boxes the frame, types the note, and the helmet and sword pop in.
+
 ## What it's for
 
 Videos an agent builds from code and stills: motion graphics, animated stills, lyric videos, title cards, explainers.
@@ -147,6 +151,8 @@ cp -r AIVCR/skills/talk-edit ~/.claude/skills/ && pip install numpy faster-whisp
 ```
 
 Then ask Claude Code to "edit my talk" with the folder of recordings. The skill's `SKILL.md` has the steps and the rules.
+
+[How To: Replace Premiere and After Effects with Claude](https://youtu.be/szs6Ns8k-ws) is a talk edited this way, start to finish.
 
 ## Add-on: the slop-o-meter
 
